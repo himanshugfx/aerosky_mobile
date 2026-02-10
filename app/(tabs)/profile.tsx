@@ -49,15 +49,17 @@ export default function ProfileScreen() {
     const [email, setEmail] = useState(user?.email || '');
     const [phone, setPhone] = useState(user?.phone || '');
 
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-
     const [supportSubject, setSupportSubject] = useState('');
     const [supportMessage, setSupportMessage] = useState('');
 
     const [isLoading, setIsLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
+
+    // Change password state (Step logic)
+    const [cpStep, setCpStep] = useState<1 | 2 | 3>(1);
+    const [cpOtp, setCpOtp] = useState('');
+    const [cpVerificationId, setCpVerificationId] = useState('');
+    const [cpLoading, setCpLoading] = useState(false);
 
     // Fetch fresh profile data on mount
     const fetchProfileData = async () => {
@@ -117,7 +119,52 @@ export default function ProfileScreen() {
         }
     };
 
+    const handleSendOtp = async () => {
+        if (!user?.email) {
+            Alert.alert('Error', 'Your account has no email configured');
+            return;
+        }
+        setCpLoading(true);
+        try {
+            await apiClient.post('/api/mobile/auth/send-otp', {
+                email: user.email,
+                purpose: 'CHANGE_PASSWORD',
+            });
+            Alert.alert('OTP Sent', `A 6-digit code has been sent to ${user.email}`);
+            setCpStep(2);
+        } catch (error: any) {
+            Alert.alert('Error', error.response?.data?.error || 'Failed to send OTP');
+        } finally {
+            setCpLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (cpOtp.length !== 6) {
+            Alert.alert('Error', 'Please enter the 6-digit OTP');
+            return;
+        }
+        setCpLoading(true);
+        try {
+            const response = await apiClient.post('/api/mobile/auth/verify-otp', {
+                email: user?.email,
+                otp: cpOtp,
+                purpose: 'CHANGE_PASSWORD',
+            });
+            setCpVerificationId(response.data.verificationId);
+            setCpStep(3);
+        } catch (error: any) {
+            Alert.alert('Error', error.response?.data?.error || 'Invalid OTP');
+        } finally {
+            setCpLoading(false);
+        }
+    };
+
     const handleChangePassword = async () => {
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            Alert.alert('Error', 'Please fill in all fields');
+            return;
+        }
         if (newPassword !== confirmPassword) {
             Alert.alert('Error', 'New passwords do not match');
             return;
@@ -132,12 +179,17 @@ export default function ProfileScreen() {
             await apiClient.patch('/api/mobile/profile', {
                 currentPassword,
                 newPassword,
+                otpVerificationId: cpVerificationId,
             });
             Alert.alert('Success', 'Password changed successfully');
             setChangePasswordVisible(false);
+            // Reset states
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
+            setCpStep(1);
+            setCpOtp('');
+            setCpVerificationId('');
         } catch (error: any) {
             Alert.alert('Error', error.response?.data?.error || 'Failed to change password');
         } finally {
@@ -246,8 +298,13 @@ export default function ProfileScreen() {
                     <MenuItem
                         icon="lock"
                         title="Change Password"
-                        subtitle="Update your password"
-                        onPress={() => setChangePasswordVisible(true)}
+                        subtitle="Update your password with email verification"
+                        onPress={() => {
+                            setCpStep(1);
+                            setCpOtp('');
+                            setCpVerificationId('');
+                            setChangePasswordVisible(true);
+                        }}
                     />
                 </View>
             </View>
@@ -379,47 +436,122 @@ export default function ProfileScreen() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Change Password</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Current Password"
-                            placeholderTextColor={Colors.dark.textSecondary}
-                            value={currentPassword}
-                            onChangeText={setCurrentPassword}
-                            secureTextEntry
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="New Password"
-                            placeholderTextColor={Colors.dark.textSecondary}
-                            value={newPassword}
-                            onChangeText={setNewPassword}
-                            secureTextEntry
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Confirm New Password"
-                            placeholderTextColor={Colors.dark.textSecondary}
-                            value={confirmPassword}
-                            onChangeText={setConfirmPassword}
-                            secureTextEntry
-                        />
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => setChangePasswordVisible(false)}
-                            >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.saveButton]}
-                                onPress={handleChangePassword}
-                                disabled={isLoading}
-                            >
-                                <Text style={styles.saveButtonText}>
-                                    {isLoading ? 'Changing...' : 'Change'}
-                                </Text>
-                            </TouchableOpacity>
+                        <Text style={styles.modalSubtitle}>OTP will be sent to {user?.email}</Text>
+
+                        {/* Step Indicator */}
+                        <View style={styles.stepIndicator}>
+                            {[1, 2, 3].map((step) => (
+                                <View key={step} style={styles.stepRow}>
+                                    <View style={[
+                                        styles.stepDot,
+                                        cpStep >= step && styles.stepDotActive,
+                                    ]}>
+                                        <Text style={[styles.stepDotText, cpStep >= step && styles.stepDotTextActive]}>
+                                            {cpStep > step ? '✓' : step}
+                                        </Text>
+                                    </View>
+                                    <Text style={[styles.stepLabel, cpStep >= step && styles.stepLabelActive]}>
+                                        {step === 1 ? 'Send' : step === 2 ? 'Verify' : 'Change'}
+                                    </Text>
+                                    {step < 3 && <View style={[styles.stepLine, cpStep > step && styles.stepLineActive]} />}
+                                </View>
+                            ))}
                         </View>
+
+                        {/* Step 1: Send OTP */}
+                        {cpStep === 1 && (
+                            <View>
+                                <Text style={styles.cpInfoText}>
+                                    A verification code will be sent to your email to authorize this change.
+                                </Text>
+                                <TouchableOpacity
+                                    style={[styles.modalButton, styles.saveButton, { marginTop: 16 }]}
+                                    onPress={handleSendOtp}
+                                    disabled={cpLoading}
+                                >
+                                    {cpLoading ? (
+                                        <ActivityIndicator size="small" color="#fff" />
+                                    ) : (
+                                        <Text style={styles.saveButtonText}>Send Verification Code</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        {/* Step 2: Verify OTP */}
+                        {cpStep === 2 && (
+                            <View>
+                                <TextInput
+                                    style={[styles.input, styles.otpInput]}
+                                    value={cpOtp}
+                                    onChangeText={setCpOtp}
+                                    placeholder="000000"
+                                    placeholderTextColor={Colors.dark.textSecondary}
+                                    keyboardType="number-pad"
+                                    maxLength={6}
+                                />
+                                <TouchableOpacity
+                                    style={[styles.modalButton, styles.saveButton]}
+                                    onPress={handleVerifyOtp}
+                                    disabled={cpLoading}
+                                >
+                                    {cpLoading ? (
+                                        <ActivityIndicator size="small" color="#fff" />
+                                    ) : (
+                                        <Text style={styles.saveButtonText}>Verify Code</Text>
+                                    )}
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={handleSendOtp} style={{ marginTop: 12, alignItems: 'center' }}>
+                                    <Text style={{ color: Colors.dark.primary, fontSize: 13 }}>Resend Code</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        {/* Step 3: Change Password */}
+                        {cpStep === 3 && (
+                            <View>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Current Password"
+                                    placeholderTextColor={Colors.dark.textSecondary}
+                                    value={currentPassword}
+                                    onChangeText={setCurrentPassword}
+                                    secureTextEntry
+                                />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="New Password"
+                                    placeholderTextColor={Colors.dark.textSecondary}
+                                    value={newPassword}
+                                    onChangeText={setNewPassword}
+                                    secureTextEntry
+                                />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Confirm New Password"
+                                    placeholderTextColor={Colors.dark.textSecondary}
+                                    value={confirmPassword}
+                                    onChangeText={setConfirmPassword}
+                                    secureTextEntry
+                                />
+                                <TouchableOpacity
+                                    style={[styles.modalButton, styles.saveButton]}
+                                    onPress={handleChangePassword}
+                                    disabled={isLoading}
+                                >
+                                    <Text style={styles.saveButtonText}>
+                                        {isLoading ? 'Changing...' : 'Change Password'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        <TouchableOpacity
+                            style={[styles.modalButton, styles.cancelButton, { marginTop: 12 }]}
+                            onPress={() => setChangePasswordVisible(false)}
+                        >
+                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
@@ -720,5 +852,68 @@ const styles = StyleSheet.create({
     saveButtonText: {
         color: '#FFFFFF',
         fontWeight: '600',
+    },
+    // OTP Styles
+    stepIndicator: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    stepRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    stepDot: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: Colors.dark.background,
+        borderWidth: 1,
+        borderColor: Colors.dark.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    stepDotActive: {
+        backgroundColor: Colors.dark.primary,
+        borderColor: Colors.dark.primary,
+    },
+    stepDotText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: Colors.dark.textSecondary,
+    },
+    stepDotTextActive: {
+        color: '#fff',
+    },
+    stepLabel: {
+        fontSize: 10,
+        color: Colors.dark.textSecondary,
+        marginLeft: 4,
+    },
+    stepLabelActive: {
+        color: Colors.dark.primary,
+        fontWeight: '600',
+    },
+    stepLine: {
+        width: 20,
+        height: 2,
+        backgroundColor: Colors.dark.border,
+        marginHorizontal: 4,
+    },
+    stepLineActive: {
+        backgroundColor: Colors.dark.primary,
+    },
+    cpInfoText: {
+        fontSize: 14,
+        color: Colors.dark.textSecondary,
+        lineHeight: 20,
+        textAlign: 'center',
+    },
+    otpInput: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        letterSpacing: 8,
+        textAlign: 'center',
     },
 });
