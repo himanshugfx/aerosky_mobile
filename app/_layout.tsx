@@ -124,6 +124,7 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="support/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="drone/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
