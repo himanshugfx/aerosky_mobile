@@ -40,8 +40,10 @@
     },
     "extra": {
       "eas": {
-        "projectId": "your-project-id"
-      }
-    }
+        "projectId": "33ded400-1742-4a1e-bdcb-7bd40c886d3e"
+      },
+      "router": {}
+    },
+    "owner": "himanshu.gfx"
   }
 }
