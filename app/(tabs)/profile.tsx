@@ -253,7 +253,9 @@ export default function ProfileScreen() {
                         </Text>
                     </View>
                 </View>
-                <Text style={styles.userName}>{user?.fullName || user?.username || 'User'}</Text>
+                <Text style={[styles.userName, { textAlign: 'center' }]} numberOfLines={2}>
+                    {user?.fullName || user?.username || 'User'}
+                </Text>
                 <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
                 <View style={styles.roleBadgeContainer}>
                     <View style={styles.roleBadge}>
@@ -407,13 +409,13 @@ export default function ProfileScreen() {
                         />
                         <View style={styles.modalButtons}>
                             <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
+                                style={[styles.modalButton, styles.rowButton, styles.cancelButton]}
                                 onPress={() => setEditProfileVisible(false)}
                             >
                                 <Text style={styles.cancelButtonText}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.modalButton, styles.saveButton]}
+                                style={[styles.modalButton, styles.rowButton, styles.saveButton]}
                                 onPress={handleUpdateProfile}
                                 disabled={isLoading}
                             >
@@ -589,13 +591,13 @@ export default function ProfileScreen() {
                         />
                         <View style={styles.modalButtons}>
                             <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
+                                style={[styles.modalButton, styles.rowButton, styles.cancelButton]}
                                 onPress={() => setHelpCenterVisible(false)}
                             >
                                 <Text style={styles.cancelButtonText}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.modalButton, styles.saveButton]}
+                                style={[styles.modalButton, styles.rowButton, styles.saveButton]}
                                 onPress={handleSubmitSupport}
                                 disabled={isLoading}
                             >
@@ -653,10 +655,11 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
     },
     userName: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: '800',
         color: Colors.dark.text,
         marginBottom: 4,
+        paddingHorizontal: Spacing.md,
     },
     userEmail: {
         fontSize: FontSizes.md,
@@ -666,14 +669,19 @@ const styles = StyleSheet.create({
     roleBadgeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+        gap: 8,
+        paddingHorizontal: Spacing.md,
     },
     roleBadge: {
         backgroundColor: 'rgba(59, 130, 246, 0.15)',
-        paddingHorizontal: 16,
+        paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: BorderRadius.full,
         borderWidth: 1,
         borderColor: 'rgba(59, 130, 246, 0.3)',
+        marginBottom: 4,
     },
     roleBadgeText: {
         fontSize: 12,
@@ -831,11 +839,16 @@ const styles = StyleSheet.create({
         gap: Spacing.md,
         marginTop: Spacing.sm,
     },
-    modalButton: {
+    rowButton: {
         flex: 1,
-        padding: Spacing.md,
+    },
+    modalButton: {
+        paddingVertical: 14,
+        paddingHorizontal: Spacing.md,
         borderRadius: BorderRadius.md,
         alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 48,
     },
     cancelButton: {
         backgroundColor: Colors.dark.background,
