@@ -57,6 +57,7 @@ export default function SupportChatScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [newMessage, setNewMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [statusModalVisible, setStatusModalVisible] = useState(false);
 
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
@@ -99,8 +100,9 @@ export default function SupportChatScreen() {
     const handleStatusChange = async (newStatus: string) => {
         try {
             await apiClient.put(`/api/mobile/support/${id}`, { status: newStatus });
+            setStatusModalVisible(false);
             fetchTicket();
-            Alert.alert('Success', `Ticket marked as ${newStatus}`);
+            Alert.alert('Success', `Ticket status updated to ${newStatus}`);
         } catch (error: any) {
             Alert.alert('Error', error.response?.data?.error || 'Failed to update status');
         }
@@ -200,18 +202,18 @@ export default function SupportChatScreen() {
                             )}
                         </View>
                     </View>
-                    {isSuperAdmin && ticket.status !== 'CLOSED' && (
+                    {isSuperAdmin && (
                         <TouchableOpacity
                             style={styles.resolveButton}
-                            onPress={() => handleStatusChange(ticket.status === 'RESOLVED' ? 'CLOSED' : 'RESOLVED')}
+                            onPress={() => setStatusModalVisible(true)}
                         >
                             <FontAwesome
-                                name={ticket.status === 'RESOLVED' ? 'archive' : 'check'}
+                                name="ellipsis-v"
                                 size={14}
                                 color="#fff"
                             />
                             <Text style={styles.resolveButtonText}>
-                                {ticket.status === 'RESOLVED' ? 'Close' : 'Resolve'}
+                                Status
                             </Text>
                         </TouchableOpacity>
                     )}
@@ -263,6 +265,45 @@ export default function SupportChatScreen() {
                         <Text style={styles.closedText}>This ticket is closed</Text>
                     </View>
                 )}
+
+                {/* Status Selection Modal */}
+                <Modal
+                    visible={statusModalVisible}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setStatusModalVisible(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.modalOverlay}
+                        activeOpacity={1}
+                        onPress={() => setStatusModalVisible(false)}
+                    >
+                        <View style={styles.statusModalContent}>
+                            <Text style={styles.modalTitle}>Update Status</Text>
+                            {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const).map((s) => (
+                                <TouchableOpacity
+                                    key={s}
+                                    style={[
+                                        styles.statusOption,
+                                        ticket.status === s && styles.statusOptionActive
+                                    ]}
+                                    onPress={() => handleStatusChange(s)}
+                                >
+                                    <View style={[styles.statusDot, { backgroundColor: statusColors[s] }]} />
+                                    <Text style={[
+                                        styles.statusOptionText,
+                                        ticket.status === s && styles.statusOptionTextActive
+                                    ]}>
+                                        {s.replace('_', ' ')}
+                                    </Text>
+                                    {ticket.status === s && (
+                                        <FontAwesome name="check" size={14} color={Colors.dark.primary} />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
             </KeyboardAvoidingView>
         </>
     );
@@ -333,6 +374,52 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: '600',
         fontSize: 12,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: Spacing.xl,
+    },
+    statusModalContent: {
+        width: '100%',
+        backgroundColor: Colors.dark.cardBackground,
+        borderRadius: BorderRadius.xl,
+        padding: Spacing.lg,
+        borderWidth: 1,
+        borderColor: Colors.dark.border,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: Colors.dark.text,
+        marginBottom: Spacing.md,
+    },
+    statusOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: Spacing.md,
+        borderRadius: BorderRadius.md,
+        gap: 12,
+    },
+    statusOptionActive: {
+        backgroundColor: Colors.dark.primary + '10',
+    },
+    statusDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    statusOptionText: {
+        flex: 1,
+        fontSize: 15,
+        color: Colors.dark.text,
+    },
+    statusOptionTextActive: {
+        color: Colors.dark.primary,
+        fontWeight: '600',
     },
     messageList: {
         padding: Spacing.md,
