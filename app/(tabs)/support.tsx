@@ -26,6 +26,7 @@ interface SupportTicket {
     _count?: {
         messages: number;
     };
+    hasNewReply?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -144,7 +145,12 @@ export default function SupportScreen() {
                 </View>
             </View>
 
-            <Text style={styles.ticketSubject}>{item.subject}</Text>
+            <View style={styles.subjectRow}>
+                <Text style={styles.ticketSubject}>{item.subject}</Text>
+                {!isSuperAdmin && item.hasNewReply && (
+                    <View style={styles.unreadDot} />
+                )}
+            </View>
 
             {isSuperAdmin && item.organization && (
                 <View style={styles.orgInfo}>
@@ -371,11 +377,23 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '700',
     },
+    subjectRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 8,
+    },
     ticketSubject: {
         fontSize: 16,
         fontWeight: '600',
         color: Colors.dark.text,
-        marginBottom: 8,
+        flex: 1,
+    },
+    unreadDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#EF4444',
     },
     orgInfo: {
         flexDirection: 'row',
