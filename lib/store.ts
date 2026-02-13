@@ -97,6 +97,7 @@ interface ComplianceState {
     deleteOrder: (id: string) => Promise<void>;
 
     // FlightLog actions
+    addFlightLog: (log: Partial<FlightLog>) => Promise<void>;
     deleteFlightLog: (id: string) => Promise<void>;
 
     // Compliance actions
@@ -360,6 +361,17 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
             set((state) => ({ flightLogs: state.flightLogs.filter((f) => f.id !== id) }));
         } catch (error) {
             console.error('Failed to delete flight log:', error);
+            throw error;
+        }
+    },
+
+    addFlightLog: async (log) => {
+        try {
+            const { flightsApi } = await import('./api');
+            const newLog = await flightsApi.create(log);
+            set((state) => ({ flightLogs: [newLog, ...state.flightLogs] }));
+        } catch (error) {
+            console.error('Failed to add flight log:', error);
             throw error;
         }
     },

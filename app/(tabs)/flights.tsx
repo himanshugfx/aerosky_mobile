@@ -10,6 +10,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import AddFlightLogModal from '../../components/AddFlightLogModal';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
 import type { FlightLog } from '../../lib/types';
@@ -73,11 +74,15 @@ const FlightLogCard = ({
 };
 
 export default function FlightsScreen() {
-    const { flightLogs, loading, fetchFlightLogs, deleteFlightLog } = useComplianceStore();
+    const { flightLogs, loading, fetchFlightLogs, addFlightLog, deleteFlightLog, fetchDrones, fetchTeamMembers, fetchBatteries } = useComplianceStore();
     const [refreshing, setRefreshing] = useState(false);
+    const [isAddModalVisible, setIsAddModalVisible] = useState(false);
 
     useEffect(() => {
         fetchFlightLogs();
+        fetchDrones();
+        fetchTeamMembers();
+        fetchBatteries();
     }, []);
 
     const onRefresh = React.useCallback(async () => {
@@ -129,6 +134,15 @@ export default function FlightsScreen() {
                         <Text style={styles.emptySubtitle}>Your flight records will appear here after they are logged on the web dashboard.</Text>
                     </View>
                 }
+            />
+            <TouchableOpacity style={styles.fab} onPress={() => setIsAddModalVisible(true)}>
+                <FontAwesome name="plus" size={24} color="#fff" />
+            </TouchableOpacity>
+
+            <AddFlightLogModal
+                visible={isAddModalVisible}
+                onClose={() => setIsAddModalVisible(false)}
+                onSubmit={addFlightLog}
             />
         </View>
     );
@@ -199,4 +213,20 @@ const styles = StyleSheet.create({
     emptyState: { alignItems: 'center', justifyContent: 'center', marginTop: 100, paddingHorizontal: 40 },
     emptyTitle: { fontSize: FontSizes.xl, color: Colors.dark.text, fontWeight: 'bold', marginTop: 16 },
     emptySubtitle: { fontSize: FontSizes.md, color: Colors.dark.textSecondary, textAlign: 'center', marginTop: 8 },
+    fab: {
+        position: 'absolute',
+        right: Spacing.lg,
+        bottom: Spacing.lg,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: Colors.dark.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
 });
