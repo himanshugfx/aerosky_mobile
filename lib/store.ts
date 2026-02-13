@@ -4,7 +4,7 @@
 import { create } from 'zustand';
 import { apiClient, batteriesApi, dronesApi, ordersApi, subcontractorsApi, teamApi } from './api';
 import { auth } from './auth';
-import type { Battery, Drone, ManufacturedUnit, Order, Subcontractor, TeamMember, User } from './types';
+import type { Battery, Drone, FlightLog, ManufacturedUnit, Order, Subcontractor, TeamMember, User } from './types';
 
 // ============================================
 // AUTH STORE
@@ -59,6 +59,7 @@ interface ComplianceState {
     subcontractors: Subcontractor[];
     batteries: Battery[];
     orders: Order[];
+    flightLogs: FlightLog[];
     loading: boolean;
     error: string | null;
 
@@ -68,6 +69,7 @@ interface ComplianceState {
     fetchSubcontractors: () => Promise<void>;
     fetchBatteries: () => Promise<void>;
     fetchOrders: () => Promise<void>;
+    fetchFlightLogs: () => Promise<void>;
     fetchAll: () => Promise<void>;
 
     // Drone actions
@@ -94,6 +96,9 @@ interface ComplianceState {
     updateOrder: (id: string, updates: Partial<Order>) => Promise<void>;
     deleteOrder: (id: string) => Promise<void>;
 
+    // FlightLog actions
+    deleteFlightLog: (id: string) => Promise<void>;
+
     // Compliance actions
     updateDroneUploads: (droneId: string, uploadType: string, files: string | string[], label?: string) => Promise<void>;
     assignAccountableManager: (droneId: string, managerId: string) => Promise<void>;
@@ -111,6 +116,7 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
     subcontractors: [],
     batteries: [],
     orders: [],
+    flightLogs: [],
     loading: false,
     error: null,
 
@@ -124,6 +130,7 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
                 get().fetchSubcontractors(),
                 get().fetchBatteries(),
                 get().fetchOrders(),
+                get().fetchFlightLogs(),
             ]);
         } catch (error) {
             set({ error: 'Failed to fetch data' });
@@ -179,6 +186,17 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
             set({ orders });
         } catch (error) {
             console.error('Failed to fetch orders:', error);
+        }
+    },
+
+    // Fetch flight logs
+    fetchFlightLogs: async () => {
+        try {
+            const { flightsApi } = await import('./api');
+            const flightLogs = await flightsApi.list();
+            set({ flightLogs });
+        } catch (error) {
+            console.error('Failed to fetch flight logs:', error);
         }
     },
 
@@ -331,6 +349,17 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
             set((state) => ({ orders: state.orders.filter((o) => o.id !== id) }));
         } catch (error) {
             console.error('Failed to delete order:', error);
+            throw error;
+        }
+    },
+
+    deleteFlightLog: async (id) => {
+        try {
+            const { flightsApi } = await import('./api');
+            await flightsApi.delete(id);
+            set((state) => ({ flightLogs: state.flightLogs.filter((f) => f.id !== id) }));
+        } catch (error) {
+            console.error('Failed to delete flight log:', error);
             throw error;
         }
     },

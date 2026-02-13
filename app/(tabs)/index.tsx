@@ -138,7 +138,7 @@ const BusinessDashboard = ({
         <QuickAction title="Add Drone" icon="plus-circle" onPress={() => router.push('/drones')} />
         <QuickAction title="New Order" icon="file-text" onPress={() => router.push('/orders')} color="#F97316" />
         <QuickAction title="Add Staff" icon="user-plus" onPress={() => router.push('/staff')} color={Colors.dark.success} />
-        <QuickAction title="Flights" icon="send" color={Colors.dark.accent} />
+        <QuickAction title="Flights" icon="send" onPress={() => router.push('/flights')} color={Colors.dark.accent} />
       </View>
 
       {/* Recent Activity */}

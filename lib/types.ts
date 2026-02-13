@@ -98,6 +98,30 @@ export interface Drone {
     createdAt: string;
 }
 
+export interface FlightLog {
+    id: string;
+    organizationId?: string;
+    date: string;
+    takeoffTime: string;
+    duration: string;
+    locationCoords?: string;
+    locationName?: string;
+    picId?: string;
+    voId?: string;
+    missionType: string;
+    droneId: string;
+    serialNumber?: string;
+    uin?: string;
+    technicalFeedback?: string;
+    batteryId?: string;
+    createdAt: string;
+    updatedAt: string;
+    drone?: Drone;
+    pic?: TeamMember;
+    vo?: TeamMember;
+    battery?: Battery;
+}
+
 export interface FlightPlan {
     id: string;
     drone_id: string;

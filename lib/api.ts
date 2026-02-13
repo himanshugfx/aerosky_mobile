@@ -4,7 +4,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { auth } from './auth';
 import { API_BASE_URL } from './config';
-import type { Battery, Drone, FlightPlan, Order, Pilot, Subcontractor, TeamMember } from './types';
+import type { Battery, Drone, FlightLog, FlightPlan, Order, Pilot, Subcontractor, TeamMember } from './types';
 
 // Create axios instance with base configuration
 const createApiClient = (): AxiosInstance => {
@@ -191,28 +191,28 @@ export const pilotsApi = {
 // FLIGHTS API
 // ============================================
 export const flightsApi = {
+    list: async (): Promise<FlightLog[]> => {
+        const response = await apiClient.get('/api/mobile/flights');
+        return response.data;
+    },
+
+    get: async (id: string): Promise<FlightLog> => {
+        const response = await apiClient.get(`/api/mobile/flights/${id}`);
+        return response.data;
+    },
+
+    create: async (data: Partial<FlightLog>): Promise<FlightLog> => {
+        const response = await apiClient.post('/api/mobile/flights', data);
+        return response.data;
+    },
+
+    delete: async (id: string): Promise<void> => {
+        await apiClient.delete(`/api/mobile/flights/${id}`);
+    },
+
+    // Legacy/Mock methods for plans
     listPlans: async (): Promise<FlightPlan[]> => {
         const response = await apiClient.get('/api/flights');
-        return response.data;
-    },
-
-    getPlan: async (id: string): Promise<FlightPlan> => {
-        const response = await apiClient.get(`/api/flights/${id}`);
-        return response.data;
-    },
-
-    createPlan: async (data: Partial<FlightPlan>): Promise<FlightPlan> => {
-        const response = await apiClient.post('/api/flights', data);
-        return response.data;
-    },
-
-    startFlight: async (planId: string): Promise<FlightPlan> => {
-        const response = await apiClient.post(`/api/flights/${planId}/start`);
-        return response.data;
-    },
-
-    completeFlight: async (planId: string): Promise<FlightPlan> => {
-        const response = await apiClient.post(`/api/flights/${planId}/complete`);
         return response.data;
     },
 };

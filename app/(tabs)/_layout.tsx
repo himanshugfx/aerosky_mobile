@@ -23,6 +23,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     { name: 'subcontractors', label: 'Subcontractors', icon: 'building', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'batteries', label: 'Batteries', icon: 'bolt', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'orders', label: 'Orders', icon: 'list-alt', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
+    { name: 'flights', label: 'Flights', icon: 'send', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'profile', label: 'Profile', icon: 'user', roles: ['ALL'] },
   ];
 
@@ -207,6 +208,14 @@ export default function DrawerLayout() {
           title: 'Orders',
           drawerLabel: 'Orders',
           drawerIcon: ({ color }) => <FontAwesome name="list-alt" size={20} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="flights"
+        options={{
+          title: 'Flight Logs',
+          drawerLabel: 'Flights',
+          drawerIcon: ({ color }) => <FontAwesome name="send" size={20} color={color} />,
         }}
       />
       <Drawer.Screen
