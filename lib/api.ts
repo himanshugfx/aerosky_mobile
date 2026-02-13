@@ -216,3 +216,28 @@ export const flightsApi = {
         return response.data;
     },
 };
+
+// ============================================
+// INVENTORY API
+// ============================================
+export const inventoryApi = {
+    listComponents: async () => {
+        const response = await apiClient.get('/api/mobile/inventory/components');
+        return response.data;
+    },
+
+    createComponent: async (data: any) => {
+        const response = await apiClient.post('/api/mobile/inventory/components', data);
+        return response.data;
+    },
+
+    listTransactions: async (search?: string) => {
+        const response = await apiClient.get(`/api/mobile/inventory/transactions${search ? `?search=${search}` : ''}`);
+        return response.data;
+    },
+
+    createTransaction: async (data: any) => {
+        const response = await apiClient.post('/api/mobile/inventory/transactions', data);
+        return response.data;
+    },
+};

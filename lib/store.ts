@@ -2,9 +2,9 @@
 // These mirror the web app's state management
 
 import { create } from 'zustand';
-import { apiClient, batteriesApi, dronesApi, ordersApi, subcontractorsApi, teamApi } from './api';
+import { apiClient, batteriesApi, dronesApi, inventoryApi, ordersApi, subcontractorsApi, teamApi } from './api';
 import { auth } from './auth';
-import type { Battery, Drone, FlightLog, ManufacturedUnit, Order, Subcontractor, TeamMember, User } from './types';
+import type { Battery, Drone, FlightLog, InventoryComponent, InventoryTransaction, ManufacturedUnit, Order, Subcontractor, TeamMember, User } from './types';
 
 // ============================================
 // AUTH STORE
@@ -60,6 +60,8 @@ interface ComplianceState {
     batteries: Battery[];
     orders: Order[];
     flightLogs: FlightLog[];
+    components: InventoryComponent[];
+    inventoryTransactions: InventoryTransaction[];
     loading: boolean;
     error: string | null;
 
@@ -70,6 +72,7 @@ interface ComplianceState {
     fetchBatteries: () => Promise<void>;
     fetchOrders: () => Promise<void>;
     fetchFlightLogs: () => Promise<void>;
+    fetchInventory: (search?: string) => Promise<void>;
     fetchAll: () => Promise<void>;
 
     // Drone actions
@@ -100,6 +103,10 @@ interface ComplianceState {
     addFlightLog: (log: Partial<FlightLog>) => Promise<void>;
     deleteFlightLog: (id: string) => Promise<void>;
 
+    // Inventory actions
+    addInventoryTransaction: (data: any) => Promise<void>;
+    addComponentType: (data: any) => Promise<void>;
+
     // Compliance actions
     updateDroneUploads: (droneId: string, uploadType: string, files: string | string[], label?: string) => Promise<void>;
     assignAccountableManager: (droneId: string, managerId: string) => Promise<void>;
@@ -118,6 +125,8 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
     batteries: [],
     orders: [],
     flightLogs: [],
+    components: [],
+    inventoryTransactions: [],
     loading: false,
     error: null,
 
@@ -132,6 +141,7 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
                 get().fetchBatteries(),
                 get().fetchOrders(),
                 get().fetchFlightLogs(),
+                get().fetchInventory(),
             ]);
         } catch (error) {
             set({ error: 'Failed to fetch data' });
@@ -198,6 +208,19 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
             set({ flightLogs });
         } catch (error) {
             console.error('Failed to fetch flight logs:', error);
+        }
+    },
+
+    // Fetch inventory
+    fetchInventory: async (search) => {
+        try {
+            const [components, inventoryTransactions] = await Promise.all([
+                inventoryApi.listComponents(),
+                inventoryApi.listTransactions(search)
+            ]);
+            set({ components, inventoryTransactions });
+        } catch (error) {
+            console.error('Failed to fetch inventory:', error);
         }
     },
 
@@ -372,6 +395,27 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
             set((state) => ({ flightLogs: [newLog, ...state.flightLogs] }));
         } catch (error) {
             console.error('Failed to add flight log:', error);
+            throw error;
+        }
+    },
+
+    // Inventory actions
+    addInventoryTransaction: async (data) => {
+        try {
+            await inventoryApi.createTransaction(data);
+            await get().fetchInventory();
+        } catch (error) {
+            console.error('Failed to add transaction:', error);
+            throw error;
+        }
+    },
+
+    addComponentType: async (data) => {
+        try {
+            await inventoryApi.createComponent(data);
+            await get().fetchInventory();
+        } catch (error) {
+            console.error('Failed to add component:', error);
             throw error;
         }
     },

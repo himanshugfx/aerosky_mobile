@@ -141,3 +141,24 @@ export interface Pilot {
     category_rating: string;
     status: string;
 }
+
+export interface InventoryComponent {
+    id: string;
+    name: string;
+    description: string | null;
+    quantity: number;
+}
+
+export interface InventoryTransaction {
+    id: string;
+    componentId: string;
+    type: 'IN' | 'OUT';
+    quantity: number;
+    date: string;
+    subcontractorId?: string;
+    userId?: string;
+    takenOutFor?: string;
+    component: InventoryComponent;
+    subcontractor?: Subcontractor;
+    user?: { fullName: string; username: string };
+}

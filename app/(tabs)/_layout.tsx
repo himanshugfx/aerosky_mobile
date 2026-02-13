@@ -21,6 +21,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     { name: 'drones', label: 'Drones', icon: 'plane', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'staff', label: 'Team Members', icon: 'users', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'subcontractors', label: 'Subcontractors', icon: 'building', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
+    { name: 'inventory', label: 'Inventory', icon: 'archive', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'batteries', label: 'Batteries', icon: 'bolt', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'orders', label: 'Orders', icon: 'list-alt', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'flights', label: 'Flights', icon: 'send', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
@@ -192,6 +193,14 @@ export default function DrawerLayout() {
           title: 'Subcontractors',
           drawerLabel: 'Subcontractors',
           drawerIcon: ({ color }) => <FontAwesome name="building" size={20} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="inventory"
+        options={{
+          title: 'Inventory Management',
+          drawerLabel: 'Inventory',
+          drawerIcon: ({ color }) => <FontAwesome name="archive" size={20} color={color} />,
         }}
       />
       <Drawer.Screen

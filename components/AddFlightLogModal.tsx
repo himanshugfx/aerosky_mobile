@@ -14,6 +14,29 @@ import Colors, { BorderRadius, FontSizes, Spacing } from '../constants/Colors';
 import { useComplianceStore } from '../lib/store';
 import type { FlightLog } from '../lib/types';
 
+interface SelectorProps {
+    label: string;
+    value: string;
+    placeholder: string;
+    onPress: () => void;
+    icon?: string;
+}
+
+const Selector = ({ label, value, placeholder, onPress, icon }: SelectorProps) => (
+    <View style={styles.inputGroup}>
+        <Text style={styles.label}>{label}</Text>
+        <TouchableOpacity style={styles.selectorBox} onPress={onPress}>
+            <View style={styles.selectorContent}>
+                {icon && <FontAwesome name={icon as any} size={14} color={Colors.dark.textSecondary} style={{ marginRight: 8 }} />}
+                <Text style={[styles.selectorText, !value && { color: Colors.dark.textSecondary }]}>
+                    {value || placeholder}
+                </Text>
+            </View>
+            <FontAwesome name="chevron-down" size={12} color={Colors.dark.textSecondary} />
+        </TouchableOpacity>
+    </View>
+);
+
 interface AddFlightLogModalProps {
     visible: boolean;
     onClose: () => void;
@@ -106,7 +129,22 @@ export default function AddFlightLogModal({ visible, onClose, onSubmit }: AddFli
         }
     };
 
+    const [pickerVisible, setPickerVisible] = useState(false);
+    const [pickerConfig, setPickerConfig] = useState<{
+        title: string;
+        items: { id: string; label: string; sublabel?: string }[];
+        onSelect: (id: string) => void;
+    } | null>(null);
+
+    const openPicker = (title: string, items: { id: string; label: string; sublabel?: string }[], onSelect: (id: string) => void) => {
+        setPickerConfig({ title, items, onSelect });
+        setPickerVisible(true);
+    };
+
     const selectedDrone = drones.find(d => d.id === formData.droneId);
+    const selectedPic = teamMembers.find(m => m.id === formData.picId);
+    const selectedBattery = batteries.find(b => b.id === formData.batteryId);
+    const selectedUnit = selectedDrone?.manufacturedUnits.find(u => u.serialNumber === formData.serialNumber);
 
     return (
         <Modal visible={visible} animationType="slide" transparent>
@@ -205,26 +243,17 @@ export default function AddFlightLogModal({ visible, onClose, onSubmit }: AddFli
                                 </View>
                             </View>
 
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>PIC (Pilot in Command) *</Text>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerScroll}>
-                                    {teamMembers.map((m) => (
-                                        <TouchableOpacity
-                                            key={m.id}
-                                            style={[
-                                                styles.pickerItem,
-                                                formData.picId === m.id && styles.pickerItemActive
-                                            ]}
-                                            onPress={() => setFormData({ ...formData, picId: m.id })}
-                                        >
-                                            <Text style={[
-                                                styles.pickerItemText,
-                                                formData.picId === m.id && styles.pickerItemTextActive
-                                            ]}>{m.name}</Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
-                            </View>
+                            <Selector
+                                label="PIC (Pilot in Command) *"
+                                value={selectedPic?.name || ''}
+                                placeholder="Select Pilot"
+                                onPress={() => openPicker(
+                                    "Select PIC",
+                                    teamMembers.map(m => ({ id: m.id, label: m.name, sublabel: 'Pilot' })),
+                                    (id) => setFormData({ ...formData, picId: id })
+                                )}
+                                icon="user"
+                            />
                         </View>
 
                         {/* Section 2: Aircraft Log */}
@@ -236,48 +265,33 @@ export default function AddFlightLogModal({ visible, onClose, onSubmit }: AddFli
                                 <Text style={styles.sectionTitle}>2. Aircraft Log</Text>
                             </View>
 
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Drone Model *</Text>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerScroll}>
-                                    {drones.map((d) => (
-                                        <TouchableOpacity
-                                            key={d.id}
-                                            style={[
-                                                styles.pickerItem,
-                                                formData.droneId === d.id && styles.pickerItemActive
-                                            ]}
-                                            onPress={() => setFormData({ ...formData, droneId: d.id, serialNumber: '', uin: '' })}
-                                        >
-                                            <Text style={[
-                                                styles.pickerItemText,
-                                                formData.droneId === d.id && styles.pickerItemTextActive
-                                            ]}>{d.modelName}</Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
-                            </View>
+                            <Selector
+                                label="Drone Model *"
+                                value={selectedDrone?.modelName || ''}
+                                placeholder="Select Drone"
+                                onPress={() => openPicker(
+                                    "Select Drone",
+                                    drones.map(d => ({ id: d.id, label: d.modelName })),
+                                    (id) => setFormData({ ...formData, droneId: id, serialNumber: '', uin: '' })
+                                )}
+                                icon="plane"
+                            />
 
                             {selectedDrone && (
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>Serial Number / UIN *</Text>
-                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerScroll}>
-                                        {selectedDrone.manufacturedUnits.map((u, i) => (
-                                            <TouchableOpacity
-                                                key={i}
-                                                style={[
-                                                    styles.pickerItem,
-                                                    formData.serialNumber === u.serialNumber && styles.pickerItemActive
-                                                ]}
-                                                onPress={() => setFormData({ ...formData, serialNumber: u.serialNumber, uin: u.uin })}
-                                            >
-                                                <Text style={[
-                                                    styles.pickerItemText,
-                                                    formData.serialNumber === u.serialNumber && styles.pickerItemTextActive
-                                                ]}>SN: {u.serialNumber}</Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </ScrollView>
-                                </View>
+                                <Selector
+                                    label="Serial Number / UIN *"
+                                    value={formData.serialNumber ? `SN: ${formData.serialNumber}` : ''}
+                                    placeholder="Select Unit"
+                                    onPress={() => openPicker(
+                                        "Select Unit",
+                                        selectedDrone.manufacturedUnits.map(u => ({ id: u.serialNumber, label: `SN: ${u.serialNumber}`, sublabel: `UIN: ${u.uin}` })),
+                                        (sn) => {
+                                            const unit = selectedDrone.manufacturedUnits.find(u => u.serialNumber === sn);
+                                            setFormData({ ...formData, serialNumber: sn, uin: unit?.uin || '' });
+                                        }
+                                    )}
+                                    icon="barcode"
+                                />
                             )}
 
                             <View style={styles.inputGroup}>
@@ -303,28 +317,50 @@ export default function AddFlightLogModal({ visible, onClose, onSubmit }: AddFli
                                 <Text style={styles.sectionTitle}>3. Battery Management</Text>
                             </View>
 
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Battery Pair *</Text>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerScroll}>
-                                    {batteries.map((b) => (
+                            <Selector
+                                label="Battery Pair *"
+                                value={selectedBattery ? `${selectedBattery.batteryNumberA} + ${selectedBattery.batteryNumberB}` : ''}
+                                placeholder="Select Battery Pair"
+                                onPress={() => openPicker(
+                                    "Select Battery Pair",
+                                    batteries.map(b => ({ id: b.id, label: `${b.batteryNumberA} + ${b.batteryNumberB}`, sublabel: b.ratedCapacity })),
+                                    (id) => setFormData({ ...formData, batteryId: id })
+                                )}
+                                icon="bolt"
+                            />
+                        </View>
+                    </ScrollView>
+
+                    <Modal visible={pickerVisible} transparent animationType="fade">
+                        <View style={styles.pickerOverlay}>
+                            <View style={styles.pickerModal}>
+                                <View style={styles.pickerHeader}>
+                                    <Text style={styles.pickerTitle}>{pickerConfig?.title}</Text>
+                                    <TouchableOpacity onPress={() => setPickerVisible(false)}>
+                                        <FontAwesome name="times" size={20} color={Colors.dark.textSecondary} />
+                                    </TouchableOpacity>
+                                </View>
+                                <ScrollView style={{ maxHeight: 400 }}>
+                                    {pickerConfig?.items.map((item) => (
                                         <TouchableOpacity
-                                            key={b.id}
-                                            style={[
-                                                styles.pickerItem,
-                                                formData.batteryId === b.id && styles.pickerItemActive
-                                            ]}
-                                            onPress={() => setFormData({ ...formData, batteryId: b.id })}
+                                            key={item.id}
+                                            style={styles.pickerOption}
+                                            onPress={() => {
+                                                pickerConfig.onSelect(item.id);
+                                                setPickerVisible(false);
+                                            }}
                                         >
-                                            <Text style={[
-                                                styles.pickerItemText,
-                                                formData.batteryId === b.id && styles.pickerItemTextActive
-                                            ]}>{b.batteryNumberA} + {b.batteryNumberB}</Text>
+                                            <View>
+                                                <Text style={styles.pickerLabel}>{item.label}</Text>
+                                                {item.sublabel && <Text style={styles.pickerSublabel}>{item.sublabel}</Text>}
+                                            </View>
+                                            <FontAwesome name="chevron-right" size={12} color={Colors.dark.border} />
                                         </TouchableOpacity>
                                     ))}
                                 </ScrollView>
                             </View>
                         </View>
-                    </ScrollView>
+                    </Modal>
 
                     <View style={styles.footer}>
                         <TouchableOpacity style={styles.discardBtn} onPress={onClose}>
@@ -491,14 +527,72 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.dark.primary,
         borderColor: Colors.dark.primary,
     },
-    pickerItemText: {
-        fontSize: 13,
-        color: Colors.dark.text,
-        fontWeight: '500',
-    },
     pickerItemTextActive: {
         color: '#fff',
         fontWeight: 'bold',
+    },
+    selectorBox: {
+        backgroundColor: Colors.dark.inputBackground,
+        borderRadius: BorderRadius.md,
+        padding: 14,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: Colors.dark.border,
+    },
+    selectorContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    selectorText: {
+        color: Colors.dark.text,
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    pickerOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        justifyContent: 'center',
+        padding: 24,
+    },
+    pickerModal: {
+        backgroundColor: Colors.dark.cardBackground,
+        borderRadius: 20,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: Colors.dark.border,
+    },
+    pickerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.dark.border,
+    },
+    pickerTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: Colors.dark.text,
+    },
+    pickerOption: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.dark.border,
+    },
+    pickerLabel: {
+        fontSize: 15,
+        color: Colors.dark.text,
+        fontWeight: '500',
+    },
+    pickerSublabel: {
+        fontSize: 11,
+        color: Colors.dark.textSecondary,
+        marginTop: 2,
     },
     footer: {
         flexDirection: 'row',
