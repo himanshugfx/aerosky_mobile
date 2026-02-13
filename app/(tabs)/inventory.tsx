@@ -1,4 +1,5 @@
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -15,6 +16,29 @@ import {
 } from 'react-native';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
+
+interface SelectorProps {
+    label: string;
+    value: string;
+    placeholder: string;
+    onPress: () => void;
+    icon?: string;
+}
+
+const Selector = ({ label, value, placeholder, onPress, icon }: SelectorProps) => (
+    <View style={styles.inputGroup}>
+        <Text style={styles.label}>{label}</Text>
+        <TouchableOpacity style={styles.selectorBox} onPress={onPress}>
+            <View style={styles.selectorContent}>
+                {icon && <FontAwesome name={icon as any} size={14} color={Colors.dark.textSecondary} style={{ marginRight: 8 }} />}
+                <Text style={[styles.selectorText, !value && { color: Colors.dark.textSecondary }]}>
+                    {value || placeholder}
+                </Text>
+            </View>
+            <FontAwesome name="chevron-down" size={12} color={Colors.dark.textSecondary} />
+        </TouchableOpacity>
+    </View>
+);
 
 export default function InventoryScreen() {
     const {
@@ -40,6 +64,18 @@ export default function InventoryScreen() {
         subcontractorId: '',
         takenOutFor: '',
     });
+
+    const [pickerVisible, setPickerVisible] = useState(false);
+    const [pickerConfig, setPickerConfig] = useState<{
+        title: string;
+        items: { id: string; label: string; sublabel?: string }[];
+        onSelect: (id: string) => void;
+    } | null>(null);
+
+    const openPicker = (title: string, items: { id: string; label: string; sublabel?: string }[], onSelect: (id: string) => void) => {
+        setPickerConfig({ title, items, onSelect });
+        setPickerVisible(true);
+    };
 
     useEffect(() => {
         fetchInventory(searchTerm);
@@ -76,6 +112,9 @@ export default function InventoryScreen() {
             setSubmitting(false);
         }
     };
+
+    const selectedComponent = components.find(c => c.id === formData.componentId);
+    const selectedSubcontractor = subcontractors.find(s => s.id === formData.subcontractorId);
 
     const renderTransaction = ({ item }: { item: any }) => (
         <View style={styles.transactionCard}>
@@ -164,41 +203,30 @@ export default function InventoryScreen() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Stock Arrival</Text>
-                        <Text style={styles.label}>Component</Text>
-                        <View style={styles.pickerContainer}>
-                            <FlatList
-                                data={components}
-                                horizontal
-                                keyExtractor={item => item.id}
-                                showsHorizontalScrollIndicator={false}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        style={[styles.pickerItem, formData.componentId === item.id && styles.pickerSelectedItem]}
-                                        onPress={() => setFormData({ ...formData, componentId: item.id })}
-                                    >
-                                        <Text style={[styles.pickerText, formData.componentId === item.id && styles.pickerSelectedText]}>{item.name}</Text>
-                                    </TouchableOpacity>
-                                )}
-                            />
-                        </View>
 
-                        <Text style={styles.label}>Subcontractor</Text>
-                        <View style={styles.pickerContainer}>
-                            <FlatList
-                                data={subcontractors}
-                                horizontal
-                                keyExtractor={item => item.id}
-                                showsHorizontalScrollIndicator={false}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        style={[styles.pickerItem, formData.subcontractorId === item.id && styles.pickerSelectedItem]}
-                                        onPress={() => setFormData({ ...formData, subcontractorId: item.id })}
-                                    >
-                                        <Text style={[styles.pickerText, formData.subcontractorId === item.id && styles.pickerSelectedText]}>{item.companyName}</Text>
-                                    </TouchableOpacity>
-                                )}
-                            />
-                        </View>
+                        <Selector
+                            label="Component"
+                            value={selectedComponent?.name || ''}
+                            placeholder="Select Component"
+                            onPress={() => openPicker(
+                                "Select Component",
+                                components.map(c => ({ id: c.id, label: c.name, sublabel: `Stock: ${c.quantity}` })),
+                                (id) => setFormData({ ...formData, componentId: id })
+                            )}
+                            icon="box"
+                        />
+
+                        <Selector
+                            label="Subcontractor"
+                            value={selectedSubcontractor?.companyName || ''}
+                            placeholder="Select Subcontractor"
+                            onPress={() => openPicker(
+                                "Select Subcontractor",
+                                subcontractors.map(s => ({ id: s.id, label: s.companyName })),
+                                (id) => setFormData({ ...formData, subcontractorId: id })
+                            )}
+                            icon="truck"
+                        />
 
                         <Text style={styles.label}>Quantity</Text>
                         <TextInput
@@ -227,23 +255,18 @@ export default function InventoryScreen() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Record Usage</Text>
-                        <Text style={styles.label}>Component</Text>
-                        <View style={styles.pickerContainer}>
-                            <FlatList
-                                data={components}
-                                horizontal
-                                keyExtractor={item => item.id}
-                                showsHorizontalScrollIndicator={false}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        style={[styles.pickerItem, formData.componentId === item.id && styles.pickerSelectedItem]}
-                                        onPress={() => setFormData({ ...formData, componentId: item.id })}
-                                    >
-                                        <Text style={[styles.pickerText, formData.componentId === item.id && styles.pickerSelectedText]}>{item.name} ({item.quantity})</Text>
-                                    </TouchableOpacity>
-                                )}
-                            />
-                        </View>
+
+                        <Selector
+                            label="Component"
+                            value={selectedComponent ? `${selectedComponent.name} (${selectedComponent.quantity})` : ''}
+                            placeholder="Select Component"
+                            onPress={() => openPicker(
+                                "Select Component",
+                                components.map(c => ({ id: c.id, label: c.name, sublabel: `Stock: ${c.quantity}` })),
+                                (id) => setFormData({ ...formData, componentId: id })
+                            )}
+                            icon="box"
+                        />
 
                         <Text style={styles.label}>Quantity</Text>
                         <TextInput
@@ -272,6 +295,37 @@ export default function InventoryScreen() {
                                 <Text style={styles.submitBtnText}>{submitting ? '...' : 'Record'}</Text>
                             </TouchableOpacity>
                         </View>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal visible={pickerVisible} transparent animationType="fade">
+                <View style={styles.pickerOverlay}>
+                    <View style={styles.pickerModal}>
+                        <View style={styles.pickerHeader}>
+                            <Text style={styles.pickerTitle}>{pickerConfig?.title}</Text>
+                            <TouchableOpacity onPress={() => setPickerVisible(false)}>
+                                <FontAwesome name="times" size={20} color={Colors.dark.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={{ maxHeight: 400 }}>
+                            {pickerConfig?.items.map((item) => (
+                                <TouchableOpacity
+                                    key={item.id}
+                                    style={styles.pickerOption}
+                                    onPress={() => {
+                                        pickerConfig.onSelect(item.id);
+                                        setPickerVisible(false);
+                                    }}
+                                >
+                                    <View>
+                                        <Text style={styles.pickerLabel}>{item.label}</Text>
+                                        {item.sublabel && <Text style={styles.pickerSublabel}>{item.sublabel}</Text>}
+                                    </View>
+                                    <FontAwesome name="chevron-right" size={12} color={Colors.dark.border} />
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>
@@ -309,7 +363,18 @@ const styles = StyleSheet.create({
     modalContent: { backgroundColor: Colors.dark.cardBackground, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40, borderTopWidth: 1, borderTopColor: Colors.dark.border },
     modalTitle: { fontSize: FontSizes.lg, fontWeight: 'bold', marginBottom: 20, color: Colors.dark.text },
     label: { fontSize: 12, fontWeight: '600', color: Colors.dark.textSecondary, marginBottom: 8, marginTop: 10, textTransform: 'uppercase' },
+    inputGroup: { marginBottom: 15 },
     input: { backgroundColor: Colors.dark.inputBackground, borderRadius: BorderRadius.md, padding: 12, fontSize: FontSizes.md, color: Colors.dark.text, borderWidth: 1, borderColor: Colors.dark.border },
+    selectorBox: { backgroundColor: Colors.dark.inputBackground, borderRadius: BorderRadius.md, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: Colors.dark.border },
+    selectorContent: { flexDirection: 'row', alignItems: 'center' },
+    selectorText: { color: Colors.dark.text, fontSize: 14, fontWeight: '500' },
+    pickerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', padding: 24 },
+    pickerModal: { backgroundColor: Colors.dark.cardBackground, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: Colors.dark.border },
+    pickerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: Colors.dark.border },
+    pickerTitle: { fontSize: 16, fontWeight: 'bold', color: Colors.dark.text },
+    pickerOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: Colors.dark.border },
+    pickerLabel: { fontSize: 15, color: Colors.dark.text, fontWeight: '500' },
+    pickerSublabel: { fontSize: 11, color: Colors.dark.textSecondary, marginTop: 2 },
     pickerContainer: { height: 44, marginBottom: 10 },
     pickerItem: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.dark.inputBackground, marginRight: 8, justifyContent: 'center', borderWidth: 1, borderColor: Colors.dark.border },
     pickerSelectedItem: { backgroundColor: Colors.dark.primary, borderColor: Colors.dark.primary },

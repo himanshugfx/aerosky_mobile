@@ -20,9 +20,8 @@ function getApiUrl(): string {
     // Android emulator uses 10.0.2.2 to reach host machine's localhost
     // iOS simulator and physical devices use your machine's IP
     if (__DEV__) {
-        // Use production API for development testing
-        // To use local server, replace with your machine's IP (ipconfig on Windows)
-        return 'https://aerosky-backend-one.vercel.app';
+        // Use local server for development (192.168.29.93)
+        return 'http://192.168.29.93:3000';
     }
 
     // For production native apps
