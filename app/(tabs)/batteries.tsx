@@ -31,29 +31,21 @@ const BatteryCard = ({
             </View>
             <View style={styles.infoContainer}>
                 <View style={styles.nameRow}>
-                    <Text style={styles.name}>{battery.model}</Text>
+                    <Text style={styles.name}>{battery.batteryNumberA} + {battery.batteryNumberB}</Text>
                     <View style={styles.actionIcons}>
                         <TouchableOpacity onPress={() => onDelete(battery.id)} style={styles.iconBtn}>
                             <FontAwesome name="trash" size={16} color={Colors.dark.error} />
                         </TouchableOpacity>
                     </View>
                 </View>
-                <Text style={styles.capacity}>{battery.ratedCapacity}</Text>
+                <View style={styles.badgeContainer}>
+                    <View style={styles.capacityBadge}>
+                        <Text style={styles.capacityText}>{battery.ratedCapacity}</Text>
+                    </View>
+                </View>
             </View>
         </View>
 
-        <View style={styles.cardDivider} />
-
-        <View style={styles.detailsRow}>
-            <View style={styles.detailItem}>
-                <Text style={styles.label}>Serial Number A</Text>
-                <Text style={styles.value}>{battery.batteryNumberA}</Text>
-            </View>
-            <View style={styles.detailItem}>
-                <Text style={styles.label}>Serial Number B</Text>
-                <Text style={styles.value}>{battery.batteryNumberB || 'N/A'}</Text>
-            </View>
-        </View>
     </View>
 );
 
@@ -161,11 +153,19 @@ const styles = StyleSheet.create({
     },
     infoContainer: { flex: 1 },
     nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    name: { fontSize: FontSizes.lg, fontWeight: '700', color: Colors.dark.text },
+    name: { fontSize: FontSizes.md, fontWeight: '700', color: Colors.dark.text },
     actionIcons: { flexDirection: 'row', gap: Spacing.sm },
     iconBtn: { padding: 4 },
-    capacity: { fontSize: FontSizes.sm, color: Colors.dark.success, marginTop: 2, fontWeight: '600' },
-    cardDivider: { height: 1, backgroundColor: Colors.dark.border, marginVertical: Spacing.md },
+    badgeContainer: { flexDirection: 'row', marginTop: 6 },
+    capacityBadge: {
+        backgroundColor: Colors.dark.success + '20',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: Colors.dark.success + '40',
+    },
+    capacityText: { fontSize: 11, color: Colors.dark.success, fontWeight: '700' },
     detailsRow: { flexDirection: 'row', justifyContent: 'space-between' },
     detailItem: { flex: 1 },
     label: { fontSize: FontSizes.xs, color: Colors.dark.textSecondary, marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 },

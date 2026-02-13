@@ -21,30 +21,26 @@ interface AddBatteryModalProps {
 }
 
 export default function AddBatteryModal({ visible, onClose, onSubmit, initialData }: AddBatteryModalProps) {
-    const [model, setModel] = useState(initialData?.model || '');
+    const [pairNumber, setPairNumber] = useState(initialData?.batteryNumberA?.replace(/[A-Z]/g, '') || '');
     const [ratedCapacity, setRatedCapacity] = useState(initialData?.ratedCapacity || '');
-    const [batteryNumberA, setBatteryNumberA] = useState(initialData?.batteryNumberA || '');
-    const [batteryNumberB, setBatteryNumberB] = useState(initialData?.batteryNumberB || '');
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (visible) {
-            setModel(initialData?.model || '');
+            setPairNumber(initialData?.batteryNumberA?.replace(/[A-Z]/g, '') || '');
             setRatedCapacity(initialData?.ratedCapacity || '');
-            setBatteryNumberA(initialData?.batteryNumberA || '');
-            setBatteryNumberB(initialData?.batteryNumberB || '');
         }
     }, [visible, initialData]);
 
     const handleSubmit = async () => {
-        if (!model.trim() || !batteryNumberA.trim()) return;
+        if (!pairNumber.trim()) return;
         setIsLoading(true);
         try {
             await onSubmit({
-                model: model.trim(),
+                model: `Pair ${pairNumber.trim()}`,
                 ratedCapacity: ratedCapacity.trim(),
-                batteryNumberA: batteryNumberA.trim(),
-                batteryNumberB: batteryNumberB.trim(),
+                batteryNumberA: `${pairNumber.trim()}A`,
+                batteryNumberB: `${pairNumber.trim()}B`,
             });
             onClose();
         } catch (error) {
@@ -70,55 +66,34 @@ export default function AddBatteryModal({ visible, onClose, onSubmit, initialDat
 
                     <ScrollView style={styles.form}>
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Battery Model *</Text>
+                            <Text style={styles.label}>Pair Number *</Text>
                             <TextInput
                                 style={styles.input}
-                                value={model}
-                                onChangeText={setModel}
-                                placeholder="e.g. Tattu Plus 22000mAh"
+                                value={pairNumber}
+                                onChangeText={setPairNumber}
+                                placeholder="e.g. 1"
+                                keyboardType="numeric"
                                 placeholderTextColor={Colors.dark.textSecondary}
                             />
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Rated Capacity</Text>
+                            <Text style={styles.label}>Rated Capacity *</Text>
                             <TextInput
                                 style={styles.input}
                                 value={ratedCapacity}
                                 onChangeText={setRatedCapacity}
-                                placeholder="e.g. 22000 mAh 44.4V"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Battery Serial Number A *</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={batteryNumberA}
-                                onChangeText={setBatteryNumberA}
-                                placeholder="Enter serial A"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Battery Serial Number B</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={batteryNumberB}
-                                onChangeText={setBatteryNumberB}
-                                placeholder="Enter serial B (optional)"
+                                placeholder="e.g. 22000 mAh"
                                 placeholderTextColor={Colors.dark.textSecondary}
                             />
                         </View>
 
                         <TouchableOpacity
-                            style={[styles.submitButton, (!model.trim() || !batteryNumberA.trim()) && styles.disabledButton]}
+                            style={[styles.submitButton, !pairNumber.trim() && styles.disabledButton]}
                             onPress={handleSubmit}
-                            disabled={isLoading || !model.trim() || !batteryNumberA.trim()}
+                            disabled={isLoading || !pairNumber.trim()}
                         >
-                            {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>{initialData ? 'Update Battery' : 'Add Battery'}</Text>}
+                            {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>{initialData ? 'Update Pair' : 'Save Battery Pair'}</Text>}
                         </TouchableOpacity>
                     </ScrollView>
                 </View>

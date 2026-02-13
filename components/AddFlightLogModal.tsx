@@ -318,7 +318,7 @@ export default function AddFlightLogModal({ visible, onClose, onSubmit }: AddFli
                                             <Text style={[
                                                 styles.pickerItemText,
                                                 formData.batteryId === b.id && styles.pickerItemTextActive
-                                            ]}>{b.model}</Text>
+                                            ]}>{b.batteryNumberA} + {b.batteryNumberB}</Text>
                                         </TouchableOpacity>
                                     ))}
                                 </ScrollView>
