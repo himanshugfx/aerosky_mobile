@@ -91,10 +91,15 @@ export default function AccountsScreen() {
             return;
         }
 
+        if (isNaN(parseFloat(formData.amount)) || parseFloat(formData.amount) <= 0) {
+            Alert.alert('Error', 'Please enter a valid amount');
+            return;
+        }
+
         setSubmitting(true);
         try {
-            await apiClient.post('/api/reimbursements', formData);
-            Alert.alert('Success', 'Reimbursement submitted');
+            const res = await apiClient.post('/api/reimbursements', formData);
+            Alert.alert('Success', 'Reimbursement submitted successfully!');
             setShowForm(false);
             setFormData({
                 name: '',
@@ -103,8 +108,9 @@ export default function AccountsScreen() {
                 billData: ''
             });
             fetchReimbursements();
-        } catch (error) {
-            Alert.alert('Error', 'Failed to submit');
+        } catch (error: any) {
+            const msg = error.response?.data?.error || 'Failed to submit';
+            Alert.alert('Error', msg);
         } finally {
             setSubmitting(false);
         }
