@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -9,26 +10,42 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    useColorScheme
 } from 'react-native';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../constants/Colors';
 
-interface AddDroneModalProps {
+interface AddBatteryModalProps {
     visible: boolean;
     onClose: () => void;
-    onSubmit: (drone: any) => Promise<void>;
+    onSubmit: (battery: any) => Promise<void>;
+    initialData?: any;
 }
 
-export default function AddDroneModal({ visible, onClose, onSubmit }: AddDroneModalProps) {
-    const [modelName, setModelName] = useState('');
+export default function AddBatteryModal({ visible, onClose, onSubmit, initialData }: AddBatteryModalProps) {
+    const [pairNumber, setPairNumber] = useState(initialData?.batteryNumberA?.replace(/[A-Z]/g, '') || '');
+    const [ratedCapacity, setRatedCapacity] = useState(initialData?.ratedCapacity || '');
     const [isLoading, setIsLoading] = useState(false);
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
+
+    useEffect(() => {
+        if (visible) {
+            setPairNumber(initialData?.batteryNumberA?.replace(/[A-Z]/g, '') || '');
+            setRatedCapacity(initialData?.ratedCapacity || '');
+        }
+    }, [visible, initialData]);
 
     const handleSubmit = async () => {
-        if (!modelName.trim()) return;
+        if (!pairNumber.trim()) return;
         setIsLoading(true);
         try {
-            await onSubmit({ modelName: modelName.trim() });
-            setModelName('');
+            await onSubmit({
+                model: `Pair ${pairNumber.trim()}`,
+                ratedCapacity: ratedCapacity.trim(),
+                batteryNumberA: `${pairNumber.trim()}A`,
+                batteryNumberB: `${pairNumber.trim()}B`,
+            });
             onClose();
         } catch (error) {
             console.error(error);
@@ -39,40 +56,71 @@ export default function AddDroneModal({ visible, onClose, onSubmit }: AddDroneMo
 
     return (
         <Modal visible={visible} animationType="slide" transparent>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.modalOverlay}
-            >
-                <View style={styles.modalContent}>
-                    <View style={styles.header}>
-                        <Text style={styles.title}>Register New Drone</Text>
-                        <TouchableOpacity onPress={onClose}>
-                            <Text style={styles.closeButton}>✕</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <ScrollView style={styles.form}>
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Model Name</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={modelName}
-                                onChangeText={setModelName}
-                                placeholder="e.g. DJI Mavic 3"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
+            <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.keyboardView}
+                >
+                    <View style={[styles.modalContent, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                        <View style={styles.header}>
+                            <View>
+                                <Text style={[styles.title, { color: theme.text }]}>
+                                    {initialData ? 'Edit Battery Pair' : 'New Battery Pair'}
+                                </Text>
+                                <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                                    Configure aircraft power systems
+                                </Text>
+                            </View>
+                            <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: theme.cardBackground }]}>
+                                <FontAwesome name="times" size={18} color={theme.textSecondary} />
+                            </TouchableOpacity>
                         </View>
 
-                        <TouchableOpacity
-                            style={[styles.submitButton, !modelName.trim() && styles.disabledButton]}
-                            onPress={handleSubmit}
-                            disabled={isLoading || !modelName.trim()}
-                        >
-                            {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>Register Drone</Text>}
-                        </TouchableOpacity>
-                    </ScrollView>
-                </View>
-            </KeyboardAvoidingView>
+                        <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>Pair ID / Number *</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+                                    value={pairNumber}
+                                    onChangeText={setPairNumber}
+                                    placeholder="e.g. 01"
+                                    keyboardType="numeric"
+                                    placeholderTextColor={theme.textSecondary + '60'}
+                                />
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>Rated Capacity *</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+                                    value={ratedCapacity}
+                                    onChangeText={setRatedCapacity}
+                                    placeholder="e.g. 22000 mAh"
+                                    placeholderTextColor={theme.textSecondary + '60'}
+                                />
+                            </View>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.submitButton,
+                                    { backgroundColor: theme.primary, shadowColor: theme.primary },
+                                    (!pairNumber.trim() || isLoading) && styles.disabledButton
+                                ]}
+                                onPress={handleSubmit}
+                                disabled={isLoading || !pairNumber.trim()}
+                            >
+                                {isLoading ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Text style={styles.submitButtonText}>
+                                        {initialData ? 'Update System' : 'Register Battery Pair'}
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
+                        </ScrollView>
+                    </View>
+                </KeyboardAvoidingView>
+            </View>
         </Modal>
     );
 }
@@ -80,63 +128,80 @@ export default function AddDroneModal({ visible, onClose, onSubmit }: AddDroneMo
 const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.75)',
         justifyContent: 'flex-end',
     },
+    keyboardView: {
+        width: '100%',
+    },
     modalContent: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderTopLeftRadius: BorderRadius.xl,
-        borderTopRightRadius: BorderRadius.xl,
-        padding: Spacing.lg,
-        maxHeight: '80%',
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        padding: Spacing.xl,
+        borderWidth: 1,
+        borderBottomWidth: 0,
+        paddingBottom: Platform.OS === 'ios' ? 40 : Spacing.xl,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: Spacing.lg,
+        alignItems: 'flex-start',
+        marginBottom: Spacing.xl,
     },
     title: {
-        fontSize: FontSizes.xl,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
+        fontSize: 22,
+        fontWeight: '800',
+        letterSpacing: -0.5,
     },
-    closeButton: {
-        fontSize: 24,
-        color: Colors.dark.textSecondary,
+    subtitle: {
+        fontSize: 13,
+        marginTop: 4,
+        fontWeight: '500',
+    },
+    closeBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     form: {
-        marginBottom: Spacing.xl,
+        marginBottom: Spacing.md,
     },
     inputGroup: {
         marginBottom: Spacing.md,
     },
     label: {
-        fontSize: FontSizes.sm,
-        color: Colors.dark.textSecondary,
-        marginBottom: Spacing.xs,
+        fontSize: 12,
+        marginBottom: 8,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     input: {
-        backgroundColor: Colors.dark.inputBackground,
-        borderRadius: BorderRadius.md,
+        borderRadius: BorderRadius.lg,
         padding: Spacing.md,
-        color: Colors.dark.text,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
+        borderWidth: 1.5,
+        fontSize: 15,
+        fontWeight: '500',
     },
     submitButton: {
-        backgroundColor: Colors.dark.primary,
-        borderRadius: BorderRadius.md,
-        padding: Spacing.md,
+        borderRadius: BorderRadius.xl,
+        padding: Spacing.xl,
         alignItems: 'center',
-        marginTop: Spacing.md,
+        marginTop: Spacing.lg,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
     disabledButton: {
         opacity: 0.5,
     },
     submitButtonText: {
         color: '#fff',
-        fontSize: FontSizes.md,
-        fontWeight: 'bold',
+        fontSize: 16,
+        fontWeight: '800',
+        letterSpacing: 0.5,
     },
 });

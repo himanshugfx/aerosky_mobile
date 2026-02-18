@@ -20,8 +20,8 @@ function getApiUrl(): string {
     // Android emulator uses 10.0.2.2 to reach host machine's localhost
     // iOS simulator and physical devices use your machine's IP
     if (__DEV__) {
-        // Use local server for development (192.168.29.93)
-        return 'http://192.168.29.93:3000';
+        // Use local server for development (192.168.29.125)
+        return 'http://192.168.29.125:3000';
     }
 
     // For production native apps

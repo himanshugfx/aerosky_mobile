@@ -1,9 +1,11 @@
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Image,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -11,15 +13,18 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    useColorScheme
 } from 'react-native';
-import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
+import Colors, { BorderRadius, Spacing } from '../../constants/Colors';
 import { apiClient } from '../../lib/api';
 import { auth } from '../../lib/auth';
 import { useAuthStore } from '../../lib/store';
 
 export default function LoginScreen() {
     const router = useRouter();
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
     const setAuth = useAuthStore((state) => state.setAuth);
 
     const [email, setEmail] = useState('');
@@ -71,31 +76,33 @@ export default function LoginScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
+            style={[styles.container, { backgroundColor: theme.background }]}
         >
             <StatusBar style="light" />
 
             {/* Background Gradient Effect */}
-            <View style={styles.backgroundGradient} />
+            <View style={[styles.backgroundGradient, { backgroundColor: theme.primary }]} />
 
             <View style={styles.content}>
                 {/* Logo and Header */}
                 <View style={styles.header}>
-                    <View style={styles.logoContainer}>
-                        <Text style={styles.logoIcon}>✈️</Text>
+                    <View style={[styles.logoContainer, { backgroundColor: 'transparent' }]}>
+                        <Image
+                            source={require('../../assets/images/icon.png')}
+                            style={{ width: 120, height: 120, borderRadius: 24 }}
+                            resizeMode="contain"
+                        />
                     </View>
-                    <Text style={styles.title}>AeroSky</Text>
-                    <Text style={styles.subtitle}>Drone Compliance Platform</Text>
                 </View>
 
                 {/* Login Form */}
-                <View style={styles.formContainer}>
+                <View style={[styles.formContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Username / Email</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Operator Identity</Text>
                         <TextInput
-                            style={styles.input}
-                            placeholder="Enter username or email"
-                            placeholderTextColor={Colors.dark.textSecondary}
+                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
+                            placeholder="Email or Username"
+                            placeholderTextColor={theme.textSecondary + '80'}
                             value={email}
                             onChangeText={setEmail}
                             keyboardType="email-address"
@@ -106,12 +113,12 @@ export default function LoginScreen() {
                     </View>
 
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Password</Text>
-                        <View style={styles.passwordContainer}>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Security Access</Text>
+                        <View style={[styles.passwordContainer, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
                             <TextInput
-                                style={styles.passwordInput}
-                                placeholder="Enter your password"
-                                placeholderTextColor={Colors.dark.textSecondary}
+                                style={[styles.passwordInput, { color: theme.text }]}
+                                placeholder="Access Key"
+                                placeholderTextColor={theme.textSecondary + '80'}
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry={!showPassword}
@@ -122,22 +129,24 @@ export default function LoginScreen() {
                                 onPress={() => setShowPassword(!showPassword)}
                                 style={styles.eyeButton}
                             >
-                                <Text style={styles.eyeIcon}>
-                                    {showPassword ? '👁️' : '👁️‍🗨️'}
-                                </Text>
+                                <FontAwesome
+                                    name={showPassword ? "eye" : "eye-slash"}
+                                    size={18}
+                                    color={theme.textSecondary}
+                                />
                             </TouchableOpacity>
                         </View>
                     </View>
 
                     <TouchableOpacity
-                        style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+                        style={[styles.loginButton, { backgroundColor: theme.primary, shadowColor: theme.primary }, isLoading && styles.loginButtonDisabled]}
                         onPress={handleLogin}
                         disabled={isLoading}
                     >
                         {isLoading ? (
                             <ActivityIndicator color="#FFFFFF" />
                         ) : (
-                            <Text style={styles.loginButtonText}>Sign In</Text>
+                            <Text style={styles.loginButtonText}>Authorize</Text>
                         )}
                     </TouchableOpacity>
 
@@ -153,20 +162,19 @@ export default function LoginScreen() {
                             setFpVerificationId('');
                         }}
                     >
-                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                        <Text style={[styles.forgotPasswordText, { color: theme.primaryLight }]}>Reset Credentials</Text>
                     </TouchableOpacity>
                 </View>
 
                 {/* Footer */}
                 <View style={styles.footer}>
-                    <Text style={styles.footerText}>
-                        Don't have an account?{' '}
-                        <Text style={styles.footerLink}>Contact Admin</Text>
+                    <Text style={[styles.footerText, { color: theme.textSecondary }]}>
+                        Restricted Access.{' '}
+                        <Text style={[styles.footerLink, { color: theme.primaryLight }]}>Contact Control</Text>
                     </Text>
                 </View>
             </View>
 
-            {/* Forgot Password Modal */}
             <Modal
                 visible={fpModalVisible}
                 animationType="slide"
@@ -174,9 +182,9 @@ export default function LoginScreen() {
                 onRequestClose={() => setFpModalVisible(false)}
             >
                 <View style={styles.fpOverlay}>
-                    <View style={styles.fpContent}>
-                        <Text style={styles.fpTitle}>Reset Password</Text>
-                        <Text style={styles.fpSubtitle}>Verify your email with OTP to reset your password</Text>
+                    <View style={[styles.fpContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                        <Text style={[styles.fpTitle, { color: theme.text }]}>Reset Protocol</Text>
+                        <Text style={[styles.fpSubtitle, { color: theme.textSecondary }]}>Initialize credential reconstruction via security code.</Text>
 
                         {/* Step Indicator */}
                         <View style={styles.fpStepIndicator}>
@@ -184,13 +192,14 @@ export default function LoginScreen() {
                                 <View key={step} style={styles.fpStepRow}>
                                     <View style={[
                                         styles.fpStepDot,
-                                        fpStep >= step && styles.fpStepDotActive,
+                                        { backgroundColor: theme.inputBackground, borderColor: theme.border },
+                                        fpStep >= step && [styles.fpStepDotActive, { backgroundColor: theme.primary, borderColor: theme.primary }],
                                     ]}>
-                                        <Text style={[styles.fpStepDotText, fpStep >= step && styles.fpStepDotTextActive]}>
+                                        <Text style={[styles.fpStepDotText, { color: theme.textSecondary }, fpStep >= step && { color: '#fff' }]}>
                                             {fpStep > step ? '✓' : step}
                                         </Text>
                                     </View>
-                                    {step < 3 && <View style={[styles.fpStepLine, fpStep > step && styles.fpStepLineActive]} />}
+                                    {step < 3 && <View style={[styles.fpStepLine, { backgroundColor: theme.border }, fpStep > step && { backgroundColor: theme.primary }]} />}
                                 </View>
                             ))}
                         </View>
@@ -199,22 +208,22 @@ export default function LoginScreen() {
                         {fpStep === 1 && (
                             <View>
                                 <View style={styles.fpInputGroup}>
-                                    <Text style={styles.fpLabel}>Email Address</Text>
+                                    <Text style={[styles.fpLabel, { color: theme.textSecondary }]}>Target Email</Text>
                                     <TextInput
-                                        style={styles.fpInput}
+                                        style={[styles.fpInput, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
                                         value={fpEmail}
                                         onChangeText={setFpEmail}
-                                        placeholder="Enter your registered email"
-                                        placeholderTextColor={Colors.dark.textSecondary}
+                                        placeholder="user@example.com"
+                                        placeholderTextColor={theme.textSecondary + '80'}
                                         keyboardType="email-address"
                                         autoCapitalize="none"
                                     />
                                 </View>
                                 <TouchableOpacity
-                                    style={[styles.fpButton, !fpEmail && styles.fpButtonDisabled]}
+                                    style={[styles.fpButton, { backgroundColor: theme.primary }, !fpEmail && styles.fpButtonDisabled]}
                                     onPress={async () => {
                                         if (!fpEmail) {
-                                            Alert.alert('Error', 'Please enter your email');
+                                            Alert.alert('Protocol Error', 'Identity target required.');
                                             return;
                                         }
                                         setFpLoading(true);
@@ -223,10 +232,10 @@ export default function LoginScreen() {
                                                 email: fpEmail,
                                                 purpose: 'FORGOT_PASSWORD',
                                             });
-                                            Alert.alert('OTP Sent', `A 6-digit code has been sent to ${fpEmail}`);
+                                            Alert.alert('Security Code Dispatched', `A 6-digit code has been sent to ${fpEmail}`);
                                             setFpStep(2);
                                         } catch (error: any) {
-                                            Alert.alert('Error', error.response?.data?.error || 'Failed to send OTP');
+                                            Alert.alert('Dispatch Failure', error.response?.data?.error || 'Unable to send security code.');
                                         } finally {
                                             setFpLoading(false);
                                         }
@@ -236,7 +245,7 @@ export default function LoginScreen() {
                                     {fpLoading ? (
                                         <ActivityIndicator size="small" color="#fff" />
                                     ) : (
-                                        <Text style={styles.fpButtonText}>Send OTP</Text>
+                                        <Text style={styles.fpButtonText}>Initialize</Text>
                                     )}
                                 </TouchableOpacity>
                             </View>
@@ -246,22 +255,22 @@ export default function LoginScreen() {
                         {fpStep === 2 && (
                             <View>
                                 <View style={styles.fpInputGroup}>
-                                    <Text style={styles.fpLabel}>Enter 6-digit OTP</Text>
+                                    <Text style={[styles.fpLabel, { color: theme.textSecondary }]}>Security Code</Text>
                                     <TextInput
-                                        style={[styles.fpInput, styles.fpOtpInput]}
+                                        style={[styles.fpInput, styles.fpOtpInput, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
                                         value={fpOtp}
                                         onChangeText={setFpOtp}
                                         placeholder="000000"
-                                        placeholderTextColor={Colors.dark.textSecondary}
+                                        placeholderTextColor={theme.textSecondary + '80'}
                                         keyboardType="number-pad"
                                         maxLength={6}
                                     />
                                 </View>
                                 <TouchableOpacity
-                                    style={[styles.fpButton, fpOtp.length !== 6 && styles.fpButtonDisabled]}
+                                    style={[styles.fpButton, { backgroundColor: theme.primary }, fpOtp.length !== 6 && styles.fpButtonDisabled]}
                                     onPress={async () => {
                                         if (fpOtp.length !== 6) {
-                                            Alert.alert('Error', 'Please enter the 6-digit OTP');
+                                            Alert.alert('Code Invalid', '6-digit authorization code required.');
                                             return;
                                         }
                                         setFpLoading(true);
@@ -274,7 +283,7 @@ export default function LoginScreen() {
                                             setFpVerificationId(response.data.verificationId);
                                             setFpStep(3);
                                         } catch (error: any) {
-                                            Alert.alert('Error', error.response?.data?.error || 'Invalid OTP');
+                                            Alert.alert('Verification Failed', error.response?.data?.error || 'Invalid security code.');
                                         } finally {
                                             setFpLoading(false);
                                         }
@@ -284,7 +293,7 @@ export default function LoginScreen() {
                                     {fpLoading ? (
                                         <ActivityIndicator size="small" color="#fff" />
                                     ) : (
-                                        <Text style={styles.fpButtonText}>Verify OTP</Text>
+                                        <Text style={styles.fpButtonText}>Authorize</Text>
                                     )}
                                 </TouchableOpacity>
                                 <TouchableOpacity
@@ -295,16 +304,16 @@ export default function LoginScreen() {
                                                 email: fpEmail,
                                                 purpose: 'FORGOT_PASSWORD',
                                             });
-                                            Alert.alert('OTP Resent', 'A new OTP has been sent to your email');
+                                            Alert.alert('Code Re-dispatched', 'A new security code has been transmitted.');
                                         } catch (error: any) {
-                                            Alert.alert('Error', error.response?.data?.error || 'Failed to resend OTP');
+                                            Alert.alert('Re-dispatch Failed', error.response?.data?.error || 'Unable to re-send code.');
                                         } finally {
                                             setFpLoading(false);
                                         }
                                     }}
-                                    style={{ marginTop: 12, alignItems: 'center' }}
+                                    style={{ marginTop: 20, alignItems: 'center' }}
                                 >
-                                    <Text style={{ color: Colors.dark.primaryLight, fontSize: 13 }}>Resend OTP</Text>
+                                    <Text style={{ color: theme.primaryLight, fontSize: 13, fontWeight: '700' }}>Re-transmit Code</Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -313,36 +322,36 @@ export default function LoginScreen() {
                         {fpStep === 3 && (
                             <View>
                                 <View style={styles.fpInputGroup}>
-                                    <Text style={styles.fpLabel}>New Password</Text>
+                                    <Text style={[styles.fpLabel, { color: theme.textSecondary }]}>New Access Key</Text>
                                     <TextInput
-                                        style={styles.fpInput}
+                                        style={[styles.fpInput, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
                                         value={fpNewPassword}
                                         onChangeText={setFpNewPassword}
-                                        placeholder="Enter new password"
-                                        placeholderTextColor={Colors.dark.textSecondary}
+                                        placeholder="Minimum 4 characters"
+                                        placeholderTextColor={theme.textSecondary + '80'}
                                         secureTextEntry
                                     />
                                 </View>
                                 <View style={styles.fpInputGroup}>
-                                    <Text style={styles.fpLabel}>Confirm Password</Text>
+                                    <Text style={[styles.fpLabel, { color: theme.textSecondary }]}>Confirm Access Key</Text>
                                     <TextInput
-                                        style={styles.fpInput}
+                                        style={[styles.fpInput, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
                                         value={fpConfirmPassword}
                                         onChangeText={setFpConfirmPassword}
-                                        placeholder="Confirm new password"
-                                        placeholderTextColor={Colors.dark.textSecondary}
+                                        placeholder="Re-enter to verify"
+                                        placeholderTextColor={theme.textSecondary + '80'}
                                         secureTextEntry
                                     />
                                 </View>
                                 <TouchableOpacity
-                                    style={styles.fpButton}
+                                    style={[styles.fpButton, { backgroundColor: theme.primary }]}
                                     onPress={async () => {
                                         if (!fpNewPassword || fpNewPassword.length < 4) {
-                                            Alert.alert('Error', 'Password must be at least 4 characters');
+                                            Alert.alert('Security Weak', 'Key must be at least 4 characters.');
                                             return;
                                         }
                                         if (fpNewPassword !== fpConfirmPassword) {
-                                            Alert.alert('Error', 'Passwords do not match');
+                                            Alert.alert('Mismatch', 'Access keys do not match.');
                                             return;
                                         }
                                         setFpLoading(true);
@@ -353,12 +362,12 @@ export default function LoginScreen() {
                                                 verificationId: fpVerificationId,
                                             });
                                             Alert.alert(
-                                                'Success',
-                                                'Password reset successfully! You can now log in with your new password.',
-                                                [{ text: 'OK', onPress: () => setFpModalVisible(false) }]
+                                                'Protocol Complete',
+                                                'Credential reconstruction successful. You may now proceed to login.',
+                                                [{ text: 'PROCEED', onPress: () => setFpModalVisible(false) }]
                                             );
                                         } catch (error: any) {
-                                            Alert.alert('Error', error.response?.data?.error || 'Failed to reset password');
+                                            Alert.alert('Finalization Failed', error.response?.data?.error || 'Unable to update credentials.');
                                         } finally {
                                             setFpLoading(false);
                                         }
@@ -368,7 +377,7 @@ export default function LoginScreen() {
                                     {fpLoading ? (
                                         <ActivityIndicator size="small" color="#fff" />
                                     ) : (
-                                        <Text style={styles.fpButtonText}>Reset Password</Text>
+                                        <Text style={styles.fpButtonText}>Commit Changes</Text>
                                     )}
                                 </TouchableOpacity>
                             </View>
@@ -378,7 +387,7 @@ export default function LoginScreen() {
                             style={styles.fpCancelButton}
                             onPress={() => setFpModalVisible(false)}
                         >
-                            <Text style={styles.fpCancelText}>Cancel</Text>
+                            <Text style={[styles.fpCancelText, { color: theme.textSecondary }]}>Abort Protocol</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -388,248 +397,205 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.dark.background,
-    },
+    container: { flex: 1 },
     backgroundGradient: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        height: '50%',
-        backgroundColor: Colors.dark.primary,
-        borderBottomLeftRadius: 50,
-        borderBottomRightRadius: 50,
+        height: '100%',
+        opacity: 0.1,
     },
     content: {
         flex: 1,
-        paddingHorizontal: Spacing.lg,
+        paddingHorizontal: 24,
         justifyContent: 'center',
     },
     header: {
         alignItems: 'center',
-        marginBottom: Spacing.xxl,
+        marginBottom: 48,
     },
     logoContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        width: 100,
+        height: 100,
+        borderRadius: 30,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: Spacing.md,
+        marginBottom: 20,
+        elevation: 10,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
     },
-    logoIcon: {
-        fontSize: 40,
-    },
+    logoEmoji: { fontSize: 44 },
     title: {
-        fontSize: FontSizes.xxxl,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
-        marginBottom: Spacing.xs,
+        fontSize: 36,
+        fontWeight: '900',
+        letterSpacing: -1,
+        marginBottom: 6,
     },
     subtitle: {
-        fontSize: FontSizes.md,
-        color: Colors.dark.textSecondary,
+        fontSize: 14,
+        fontWeight: '600',
+        letterSpacing: 2,
+        textTransform: 'uppercase',
+        opacity: 0.8,
     },
     formContainer: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.xl,
-        padding: Spacing.lg,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
+        borderRadius: 32,
+        padding: 24,
+        borderWidth: 1.5,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.4,
+        shadowRadius: 20,
+        elevation: 12,
     },
-    inputContainer: {
-        marginBottom: Spacing.md,
-    },
+    inputContainer: { marginBottom: 20 },
     label: {
-        fontSize: FontSizes.sm,
-        fontWeight: '600',
-        color: Colors.dark.textSecondary,
-        marginBottom: Spacing.xs,
+        fontSize: 11,
+        fontWeight: '900',
+        marginBottom: 10,
+        marginLeft: 4,
+        letterSpacing: 1.5,
+        textTransform: 'uppercase',
     },
     input: {
-        backgroundColor: Colors.dark.inputBackground,
-        borderRadius: BorderRadius.md,
-        borderWidth: 1,
-        borderColor: Colors.dark.inputBorder,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm + 4,
-        fontSize: FontSizes.md,
-        color: Colors.dark.text,
+        borderRadius: 18,
+        paddingHorizontal: 18,
+        paddingVertical: 16,
+        fontSize: 15,
+        fontWeight: '600',
+        borderWidth: 1.5,
     },
     passwordContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.dark.inputBackground,
-        borderRadius: BorderRadius.md,
-        borderWidth: 1,
-        borderColor: Colors.dark.inputBorder,
+        borderRadius: 18,
+        borderWidth: 1.5,
     },
     passwordInput: {
         flex: 1,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm + 4,
-        fontSize: FontSizes.md,
-        color: Colors.dark.text,
+        paddingHorizontal: 18,
+        paddingVertical: 16,
+        fontSize: 15,
+        fontWeight: '600',
     },
-    eyeButton: {
-        paddingHorizontal: Spacing.md,
-    },
-    eyeIcon: {
-        fontSize: 20,
-    },
+    eyeButton: { paddingHorizontal: 18 },
     loginButton: {
-        backgroundColor: Colors.dark.primary,
-        borderRadius: BorderRadius.md,
-        paddingVertical: Spacing.md,
+        borderRadius: 20,
+        paddingVertical: 18,
         alignItems: 'center',
-        marginTop: Spacing.md,
+        marginTop: 12,
+        shadowOpacity: 0.3,
+        elevation: 6,
     },
-    loginButtonDisabled: {
-        opacity: 0.7,
-    },
+    loginButtonDisabled: { opacity: 0.6 },
     loginButtonText: {
         color: '#FFFFFF',
-        fontSize: FontSizes.md,
-        fontWeight: '600',
+        fontSize: 15,
+        fontWeight: '900',
+        letterSpacing: 1.5,
+        textTransform: 'uppercase',
     },
     forgotPassword: {
         alignItems: 'center',
-        marginTop: Spacing.md,
+        marginTop: 20,
     },
     forgotPasswordText: {
-        color: Colors.dark.primaryLight,
-        fontSize: FontSizes.sm,
+        fontSize: 13,
+        fontWeight: '700',
     },
     footer: {
         alignItems: 'center',
-        marginTop: Spacing.xl,
+        marginTop: 40,
     },
     footerText: {
-        fontSize: FontSizes.sm,
-        color: Colors.dark.textSecondary,
-    },
-    footerLink: {
-        color: Colors.dark.primaryLight,
+        fontSize: 14,
         fontWeight: '600',
     },
-    // Forgot Password Modal Styles
+    footerLink: { fontWeight: '800' },
     fpOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.7)',
-        justifyContent: 'center',
-        padding: Spacing.xl,
+        backgroundColor: 'rgba(0,0,0,0.85)',
+        justifyContent: 'flex-end',
     },
     fpContent: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.xl,
-        padding: Spacing.xl,
-        borderWidth: 1,
-        borderColor: Colors.dark.inputBorder,
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        padding: 24,
+        paddingBottom: Platform.OS === 'ios' ? 44 : 24,
+        borderTopWidth: 1.5,
     },
     fpTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
-        marginBottom: 4,
+        fontSize: 26,
+        fontWeight: '900',
+        letterSpacing: -0.5,
+        marginBottom: 8,
     },
     fpSubtitle: {
-        fontSize: 12,
-        color: Colors.dark.textSecondary,
-        marginBottom: Spacing.lg,
+        fontSize: 14,
+        fontWeight: '500',
+        marginBottom: 32,
+        lineHeight: 20,
     },
     fpStepIndicator: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 32,
     },
-    fpStepRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
+    fpStepRow: { flexDirection: 'row', alignItems: 'center' },
     fpStepDot: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: Colors.dark.inputBackground,
-        borderWidth: 1,
-        borderColor: Colors.dark.inputBorder,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        borderWidth: 2,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    fpStepDotActive: {
-        backgroundColor: Colors.dark.primary,
-        borderColor: Colors.dark.primary,
-    },
-    fpStepDotText: {
-        fontSize: 13,
-        fontWeight: 'bold',
-        color: Colors.dark.textSecondary,
-    },
-    fpStepDotTextActive: {
-        color: '#fff',
-    },
-    fpStepLine: {
-        width: 40,
-        height: 2,
-        backgroundColor: Colors.dark.inputBorder,
-        marginHorizontal: 8,
-    },
-    fpStepLineActive: {
-        backgroundColor: Colors.dark.primary,
-    },
-    fpInputGroup: {
-        marginBottom: Spacing.md,
-    },
+    fpStepDotActive: { borderStyle: 'solid' },
+    fpStepDotText: { fontSize: 14, fontWeight: '900' },
+    fpStepLine: { width: 30, height: 2, marginHorizontal: 10, borderRadius: 1 },
+    fpInputGroup: { marginBottom: 20 },
     fpLabel: {
-        fontSize: 14,
-        color: Colors.dark.textSecondary,
-        marginBottom: 8,
-        fontWeight: '500',
+        fontSize: 11,
+        fontWeight: '900',
+        marginBottom: 10,
+        letterSpacing: 1.5,
+        textTransform: 'uppercase',
     },
     fpInput: {
-        backgroundColor: Colors.dark.inputBackground,
-        borderRadius: BorderRadius.md,
-        padding: Spacing.md,
-        color: Colors.dark.text,
-        borderWidth: 1,
-        borderColor: Colors.dark.inputBorder,
+        borderRadius: 16,
+        padding: 16,
+        fontSize: 15,
+        fontWeight: '600',
+        borderWidth: 1.5,
     },
     fpOtpInput: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        letterSpacing: 8,
+        fontSize: 28,
+        fontWeight: '900',
+        letterSpacing: 12,
         textAlign: 'center',
+        paddingVertical: 20,
     },
     fpButton: {
-        backgroundColor: Colors.dark.primary,
-        borderRadius: BorderRadius.md,
-        paddingVertical: 14,
+        borderRadius: 18,
+        paddingVertical: 18,
         alignItems: 'center',
-        marginTop: Spacing.sm,
+        marginTop: 8,
     },
-    fpButtonDisabled: {
-        opacity: 0.5,
-    },
+    fpButtonDisabled: { opacity: 0.6 },
     fpButtonText: {
         color: '#fff',
-        fontWeight: '600',
-        fontSize: 15,
+        fontWeight: '900',
+        fontSize: 14,
+        letterSpacing: 1,
+        textTransform: 'uppercase',
     },
     fpCancelButton: {
         alignItems: 'center',
+        marginTop: 16,
         paddingVertical: 12,
-        marginTop: 8,
     },
-    fpCancelText: {
-        color: Colors.dark.textSecondary,
-        fontWeight: '500',
-        fontSize: 15,
-    },
+    fpCancelText: { fontSize: 14, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
 });

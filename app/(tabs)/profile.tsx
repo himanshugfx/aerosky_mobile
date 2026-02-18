@@ -1,7 +1,21 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    ActivityIndicator,
+    Alert,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+    useColorScheme,
+    Platform,
+    KeyboardAvoidingView
+} from 'react-native';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { apiClient } from '../../lib/api';
 import { useAuthStore, useComplianceStore } from '../../lib/store';
@@ -13,7 +27,8 @@ const MenuItem = ({
     subtitle,
     onPress,
     showArrow = true,
-    danger = false
+    danger = false,
+    theme
 }: {
     icon: string;
     title: string;
@@ -21,21 +36,28 @@ const MenuItem = ({
     onPress?: () => void;
     showArrow?: boolean;
     danger?: boolean;
+    theme: any;
 }) => (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-        <View style={[styles.menuIcon, danger && styles.menuIconDanger]}>
-            <FontAwesome name={icon as any} size={18} color={danger ? Colors.dark.error : Colors.dark.primary} />
+    <TouchableOpacity
+        style={[styles.menuItem, { borderBottomColor: theme.border }]}
+        onPress={onPress}
+        activeOpacity={0.7}
+    >
+        <View style={[styles.menuIcon, { backgroundColor: danger ? theme.error + '10' : theme.primary + '08' }]}>
+            <FontAwesome name={icon as any} size={16} color={danger ? theme.error : theme.primary} />
         </View>
         <View style={styles.menuContent}>
-            <Text style={[styles.menuTitle, danger && styles.menuTitleDanger]}>{title}</Text>
-            {subtitle && <Text style={styles.menuSubtitle}>{subtitle}</Text>}
+            <Text style={[styles.menuTitle, { color: danger ? theme.error : theme.text }]}>{title}</Text>
+            {subtitle && <Text style={[styles.menuSubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>}
         </View>
-        {showArrow && <FontAwesome name="chevron-right" size={12} color={Colors.dark.textSecondary} />}
+        {showArrow && <FontAwesome name="chevron-right" size={10} color={theme.border} />}
     </TouchableOpacity>
 );
 
 export default function ProfileScreen() {
     const router = useRouter();
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
     const { user, logout, updateUser } = useAuthStore();
     const { drones, teamMembers, fetchAll, calculateCompliance } = useComplianceStore();
 
@@ -55,11 +77,16 @@ export default function ProfileScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
 
-    // Change password state (Step logic)
+    // Change password state
     const [cpStep, setCpStep] = useState<1 | 2 | 3>(1);
     const [cpOtp, setCpOtp] = useState('');
     const [cpVerificationId, setCpVerificationId] = useState('');
     const [cpLoading, setCpLoading] = useState(false);
+
+    // Missing password states
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     // Fetch fresh profile data on mount
     const fetchProfileData = async () => {
@@ -80,17 +107,17 @@ export default function ProfileScreen() {
 
     useEffect(() => {
         fetchProfileData();
-        fetchAll(); // Also refresh compliance data
+        fetchAll();
     }, []);
 
     const handleLogout = () => {
         Alert.alert(
-            'Logout',
-            'Are you sure you want to logout?',
+            'Confirm Logout',
+            'Are you sure you want to sign out of your AeroSky account?',
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: 'Wait, no', style: 'cancel' },
                 {
-                    text: 'Logout',
+                    text: 'Yes, Logout',
                     style: 'destructive',
                     onPress: async () => {
                         await logout();
@@ -102,6 +129,10 @@ export default function ProfileScreen() {
     };
 
     const handleUpdateProfile = async () => {
+        if (!fullName || !email) {
+            Alert.alert('Incomplete Profile', 'Full name and email are mandatory.');
+            return;
+        }
         setIsLoading(true);
         try {
             await apiClient.put('/api/mobile/profile', {
@@ -110,10 +141,10 @@ export default function ProfileScreen() {
                 phone,
             });
             updateUser({ email, fullName, phone });
-            Alert.alert('Success', 'Profile updated successfully');
+            Alert.alert('Identity Synced', 'Your profile information has been successfully updated.');
             setEditProfileVisible(false);
         } catch (error: any) {
-            Alert.alert('Error', error.response?.data?.error || 'Failed to update profile');
+            Alert.alert('Sync Failed', error.response?.data?.error || 'Unable to update profile at this time.');
         } finally {
             setIsLoading(false);
         }
@@ -121,7 +152,7 @@ export default function ProfileScreen() {
 
     const handleSendOtp = async () => {
         if (!user?.email) {
-            Alert.alert('Error', 'Your account has no email configured');
+            Alert.alert('Verification Blocked', 'No registered email found for this account.');
             return;
         }
         setCpLoading(true);
@@ -130,10 +161,10 @@ export default function ProfileScreen() {
                 email: user.email,
                 purpose: 'CHANGE_PASSWORD',
             });
-            Alert.alert('OTP Sent', `A 6-digit code has been sent to ${user.email}`);
+            Alert.alert('Authorization Sent', `A 6-digit authorization code has been dispatched to ${user.email}`);
             setCpStep(2);
         } catch (error: any) {
-            Alert.alert('Error', error.response?.data?.error || 'Failed to send OTP');
+            Alert.alert('Courier Failed', error.response?.data?.error || 'Failed to dispatch verification code.');
         } finally {
             setCpLoading(false);
         }
@@ -141,7 +172,7 @@ export default function ProfileScreen() {
 
     const handleVerifyOtp = async () => {
         if (cpOtp.length !== 6) {
-            Alert.alert('Error', 'Please enter the 6-digit OTP');
+            Alert.alert('Invalid Code', 'Please enter the complete 6-digit authorization code.');
             return;
         }
         setCpLoading(true);
@@ -154,7 +185,7 @@ export default function ProfileScreen() {
             setCpVerificationId(response.data.verificationId);
             setCpStep(3);
         } catch (error: any) {
-            Alert.alert('Error', error.response?.data?.error || 'Invalid OTP');
+            Alert.alert('Access Denied', error.response?.data?.error || 'The code provided is invalid or expired.');
         } finally {
             setCpLoading(false);
         }
@@ -162,15 +193,15 @@ export default function ProfileScreen() {
 
     const handleChangePassword = async () => {
         if (!currentPassword || !newPassword || !confirmPassword) {
-            Alert.alert('Error', 'Please fill in all fields');
+            Alert.alert('Empty Credentials', 'All password fields are required for security.');
             return;
         }
         if (newPassword !== confirmPassword) {
-            Alert.alert('Error', 'New passwords do not match');
+            Alert.alert('Integrity Mismatch', 'New password does not match the confirmation.');
             return;
         }
-        if (newPassword.length < 6) {
-            Alert.alert('Error', 'Password must be at least 6 characters');
+        if (newPassword.length < 8) {
+            Alert.alert('Security Alert', 'Passwords must be at least 8 characters for platform safety.');
             return;
         }
 
@@ -181,7 +212,7 @@ export default function ProfileScreen() {
                 newPassword,
                 otpVerificationId: cpVerificationId,
             });
-            Alert.alert('Success', 'Password changed successfully');
+            Alert.alert('Vault Updated', 'Your security credentials have been successfully hardened.');
             setChangePasswordVisible(false);
             // Reset states
             setCurrentPassword('');
@@ -191,7 +222,7 @@ export default function ProfileScreen() {
             setCpOtp('');
             setCpVerificationId('');
         } catch (error: any) {
-            Alert.alert('Error', error.response?.data?.error || 'Failed to change password');
+            Alert.alert('Vault Error', error.response?.data?.error || 'Failed to update security credentials.');
         } finally {
             setIsLoading(false);
         }
@@ -199,7 +230,7 @@ export default function ProfileScreen() {
 
     const handleSubmitSupport = async () => {
         if (!supportSubject || !supportMessage) {
-            Alert.alert('Error', 'Please fill in all fields');
+            Alert.alert('Inquiry Incomplete', 'Subject and detailed message are required.');
             return;
         }
 
@@ -209,724 +240,421 @@ export default function ProfileScreen() {
                 subject: supportSubject,
                 message: supportMessage,
             });
-            Alert.alert('Success', response.data.message);
+            Alert.alert('Ticket Logged', response.data.message);
             setHelpCenterVisible(false);
             setSupportSubject('');
             setSupportMessage('');
         } catch (error: any) {
-            Alert.alert('Error', error.response?.data?.error || 'Failed to submit request');
+            Alert.alert('System Error', error.response?.data?.error || 'Failed to log support ticket.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Get role display name
     const getRoleDisplay = (role: string) => {
         const names: Record<string, string> = {
-            'SUPER_ADMIN': 'Super Admin',
-            'ADMIN': 'Administrator',
-            'OPERATIONS_MANAGER': 'Operations Manager',
-            'QA_MANAGER': 'QA Manager',
-            'PILOT': 'Remote Pilot',
-            'TECHNICIAN': 'Technician',
-            'VIEWER': 'Viewer',
+            'SUPER_ADMIN': 'SYSTEM OVERSEER',
+            'ADMIN': 'PLATFORM ADMIN',
+            'OPERATIONS_MANAGER': 'OPERATIONS LEAD',
+            'QA_MANAGER': 'COMPLIANCE OFFICER',
+            'PILOT': 'REMOTE PILOT',
+            'TECHNICIAN': 'AVIONICS TECH',
+            'VIEWER': 'PLATFORM VIEWER',
         };
         return names[role] || role;
     };
 
     if (isFetching && !user) {
         return (
-            <View style={[styles.container, styles.centered]}>
-                <ActivityIndicator size="large" color={Colors.dark.primary} />
+            <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            {/* Profile Header */}
-            <View style={styles.profileHeader}>
-                <View style={styles.avatarContainer}>
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>
-                            {user?.fullName?.charAt(0)?.toUpperCase() || user?.username?.charAt(0)?.toUpperCase() || 'U'}
-                        </Text>
-                    </View>
-                </View>
-                <Text style={[styles.userName, { textAlign: 'center' }]} numberOfLines={2}>
-                    {user?.fullName || user?.username || 'User'}
-                </Text>
-                <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
-                <View style={styles.roleBadgeContainer}>
-                    <View style={styles.roleBadge}>
-                        <Text style={styles.roleBadgeText}>{getRoleDisplay(user?.role || 'VIEWER')}</Text>
-                    </View>
-                    {user?.organizationName && (
-                        <View style={[styles.roleBadge, { marginLeft: 8, backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(16, 185, 129, 0.3)' }]}>
-                            <Text style={[styles.roleBadgeText, { color: '#10B981' }]}>{user.organizationName}</Text>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar style="light" />
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                {/* Profile Header */}
+                <View style={[styles.profileHeader, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+                    <View style={styles.avatarContainer}>
+                        <View style={[styles.avatar, { backgroundColor: theme.primary, shadowColor: theme.primary }]}>
+                            <Text style={styles.avatarText}>
+                                {user?.fullName?.charAt(0)?.toUpperCase() || user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                            </Text>
                         </View>
-                    )}
-                </View>
-            </View>
+                    </View>
+                    <Text style={[styles.userName, { color: theme.text }]} numberOfLines={1}>
+                        {user?.fullName || user?.username || 'Authenticated User'}
+                    </Text>
+                    <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{user?.email || 'user@aerosky.io'}</Text>
 
-            {/* Quick Stats - Using dynamic data */}
-            <View style={styles.statsRow}>
-                <View style={styles.statBox}>
-                    <Text style={styles.statValue}>{drones?.length || 0}</Text>
-                    <Text style={styles.statLabel}>Drones</Text>
+                    <View style={styles.roleBadgeContainer}>
+                        <View style={[styles.roleBadge, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '30' }]}>
+                            <Text style={[styles.roleBadgeText, { color: theme.primary }]}>{getRoleDisplay(user?.role || 'VIEWER')}</Text>
+                        </View>
+                        {user?.organizationName && (
+                            <View style={[styles.roleBadge, { backgroundColor: theme.success + '15', borderColor: theme.success + '30' }]}>
+                                <Text style={[styles.roleBadgeText, { color: theme.success }]}>{user.organizationName}</Text>
+                            </View>
+                        )}
+                    </View>
                 </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statBox}>
-                    <Text style={styles.statValue}>{teamMembers?.length || 0}</Text>
-                    <Text style={styles.statLabel}>Staff</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statBox}>
-                    <Text style={styles.statValue}>{calculateCompliance()}</Text>
-                    <Text style={styles.statLabel}>Compliance</Text>
-                </View>
-            </View>
 
-            {/* Account Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Account</Text>
-                <View style={styles.menuGroup}>
-                    <MenuItem
-                        icon="user"
-                        title="Edit Profile"
-                        subtitle="Update your name, email, and phone"
-                        onPress={() => setEditProfileVisible(true)}
-                    />
-                    <MenuItem
-                        icon="lock"
-                        title="Change Password"
-                        subtitle="Update your password with email verification"
-                        onPress={() => {
-                            setCpStep(1);
-                            setCpOtp('');
-                            setCpVerificationId('');
-                            setChangePasswordVisible(true);
-                        }}
-                    />
+                {/* Quick Stats - Premium High-Fidelity Stat Cards */}
+                <View style={[styles.statsRow, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                    <View style={styles.statBox}>
+                        <Text style={[styles.statValue, { color: theme.text }]}>{drones?.length || 0}</Text>
+                        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>FLEET</Text>
+                    </View>
+                    <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
+                    <View style={styles.statBox}>
+                        <Text style={[styles.statValue, { color: theme.text }]}>{teamMembers?.length || 0}</Text>
+                        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>TEAM</Text>
+                    </View>
+                    <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
+                    <View style={styles.statBox}>
+                        <Text style={[styles.statValue, { color: theme.primary }]}>{calculateCompliance()}</Text>
+                        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>SAFETY</Text>
+                    </View>
                 </View>
-            </View>
 
-            {/* SUPER_ADMIN Section */}
-            {user?.role === 'SUPER_ADMIN' && (
+                {/* Settings Sections */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Platform Admin</Text>
-                    <View style={styles.menuGroup}>
+                    <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Identity & Security</Text>
+                    <View style={[styles.menuGroup, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
                         <MenuItem
-                            icon="building"
-                            title="Manage Organizations"
-                            subtitle="View and add company accounts"
-                            onPress={() => router.push('/organizations')}
+                            theme={theme}
+                            icon="user-o"
+                            title="Edit Profile"
+                            subtitle="Manage your identity credentials"
+                            onPress={() => setEditProfileVisible(true)}
+                        />
+                        <MenuItem
+                            theme={theme}
+                            icon="shield"
+                            title="Security Protocol"
+                            subtitle="Update authorization credentials"
+                            onPress={() => {
+                                setCpStep(1);
+                                setCpOtp('');
+                                setCpVerificationId('');
+                                setChangePasswordVisible(true);
+                            }}
                         />
                     </View>
                 </View>
-            )}
 
-            {/* About Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>About</Text>
-                <View style={styles.menuGroup}>
-                    <MenuItem
-                        icon="info-circle"
-                        title="About AeroSky"
-                        subtitle="Version 1.2.0"
-                        showArrow={false}
-                    />
-                </View>
-            </View>
-
-            {/* Support Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Support</Text>
-                <View style={styles.menuGroup}>
-                    <MenuItem
-                        icon="question-circle"
-                        title="Help Center"
-                        subtitle={user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
-                            ? 'Contact developer support'
-                            : 'Contact your admin'}
-                        onPress={() => setHelpCenterVisible(true)}
-                    />
-                </View>
-            </View>
-
-            {/* Logout */}
-            <View style={styles.section}>
-                <View style={styles.menuGroup}>
-                    <MenuItem
-                        icon="sign-out"
-                        title="Logout"
-                        onPress={handleLogout}
-                        showArrow={false}
-                        danger
-                    />
-                </View>
-            </View>
-
-            {/* Footer */}
-            <View style={styles.footer}>
-                <Text style={styles.footerText}>AeroSky Mobile Application</Text>
-                <Text style={styles.footerSubtext}>© 2026 AeroSky Technologies</Text>
-            </View>
-
-            {/* Edit Profile Modal */}
-            <Modal
-                visible={editProfileVisible}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setEditProfileVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Edit Profile</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Full Name"
-                            placeholderTextColor={Colors.dark.textSecondary}
-                            value={fullName}
-                            onChangeText={setFullName}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Email"
-                            placeholderTextColor={Colors.dark.textSecondary}
-                            value={email}
-                            onChangeText={setEmail}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Phone Number"
-                            placeholderTextColor={Colors.dark.textSecondary}
-                            value={phone}
-                            onChangeText={setPhone}
-                            keyboardType="phone-pad"
-                        />
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.rowButton, styles.cancelButton]}
-                                onPress={() => setEditProfileVisible(false)}
-                            >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.rowButton, styles.saveButton]}
-                                onPress={handleUpdateProfile}
-                                disabled={isLoading}
-                            >
-                                <Text style={styles.saveButtonText}>
-                                    {isLoading ? 'Saving...' : 'Save'}
-                                </Text>
-                            </TouchableOpacity>
+                {user?.role === 'SUPER_ADMIN' && (
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Systems Overseer</Text>
+                        <View style={[styles.menuGroup, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                            <MenuItem
+                                theme={theme}
+                                icon="th-large"
+                                title="Organization Nexus"
+                                subtitle="Centralized company administration"
+                                onPress={() => router.push('/organizations')}
+                            />
                         </View>
                     </View>
+                )}
+
+                <View style={styles.section}>
+                    <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Platform Support</Text>
+                    <View style={[styles.menuGroup, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                        <MenuItem
+                            theme={theme}
+                            icon="life-ring"
+                            title="AeroSky Liaison"
+                            subtitle="Direct channel for assistance"
+                            onPress={() => setHelpCenterVisible(true)}
+                        />
+                        <MenuItem
+                            theme={theme}
+                            icon="info-circle"
+                            title="System Manifest"
+                            subtitle="Version 1.2.5 [STABLE]"
+                            showArrow={false}
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <View style={[styles.menuGroup, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                        <MenuItem
+                            theme={theme}
+                            icon="power-off"
+                            title="Terminate Session"
+                            onPress={handleLogout}
+                            showArrow={false}
+                            danger
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.footer}>
+                    <Text style={[styles.footerText, { color: theme.textSecondary }]}>AeroSky Flight OS</Text>
+                    <Text style={[styles.footerSubtext, { color: theme.border }]}>© 2026 Aerosys Aviation India</Text>
+                </View>
+            </ScrollView>
+
+            {/* Modals Overhaul */}
+            <Modal visible={editProfileVisible} animationType="slide" transparent={true}>
+                <View style={styles.modalOverlay}>
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+                        <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                            <View style={styles.modalHeader}>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>Profile Settings</Text>
+                                <TouchableOpacity onPress={() => setEditProfileVisible(false)} style={[styles.closeBtn, { backgroundColor: theme.inputBackground }]}>
+                                    <FontAwesome name="times" size={16} color={theme.textSecondary} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView style={styles.formContent} showsVerticalScrollIndicator={false}>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>FULL NAME</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
+                                    placeholder="Enter full name"
+                                    placeholderTextColor={theme.textSecondary}
+                                    value={fullName}
+                                    onChangeText={setFullName}
+                                />
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>EMAIL ADDRESS</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
+                                    placeholder="Enter email"
+                                    placeholderTextColor={theme.textSecondary}
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                />
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>CONTACT NUMBER</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
+                                    placeholder="+91"
+                                    placeholderTextColor={theme.textSecondary}
+                                    value={phone}
+                                    onChangeText={setPhone}
+                                    keyboardType="phone-pad"
+                                />
+                                <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.primary }]} onPress={handleUpdateProfile} disabled={isLoading}>
+                                    {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>UPDATE IDENTITY</Text>}
+                                </TouchableOpacity>
+                            </ScrollView>
+                        </View>
+                    </KeyboardAvoidingView>
                 </View>
             </Modal>
 
-            {/* Change Password Modal */}
-            <Modal
-                visible={changePasswordVisible}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setChangePasswordVisible(false)}
-            >
+            <Modal visible={changePasswordVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Change Password</Text>
-                        <Text style={styles.modalSubtitle}>OTP will be sent to {user?.email}</Text>
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+                        <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                            <View style={styles.modalHeader}>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>Security Vault</Text>
+                                <TouchableOpacity onPress={() => setChangePasswordVisible(false)} style={[styles.closeBtn, { backgroundColor: theme.inputBackground }]}>
+                                    <FontAwesome name="times" size={16} color={theme.textSecondary} />
+                                </TouchableOpacity>
+                            </View>
 
-                        {/* Step Indicator */}
-                        <View style={styles.stepIndicator}>
-                            {[1, 2, 3].map((step) => (
-                                <View key={step} style={styles.stepRow}>
-                                    <View style={[
-                                        styles.stepDot,
-                                        cpStep >= step && styles.stepDotActive,
-                                    ]}>
-                                        <Text style={[styles.stepDotText, cpStep >= step && styles.stepDotTextActive]}>
-                                            {cpStep > step ? '✓' : step}
-                                        </Text>
-                                    </View>
-                                    <Text style={[styles.stepLabel, cpStep >= step && styles.stepLabelActive]}>
-                                        {step === 1 ? 'Send' : step === 2 ? 'Verify' : 'Change'}
-                                    </Text>
-                                    {step < 3 && <View style={[styles.stepLine, cpStep > step && styles.stepLineActive]} />}
+                            <ScrollView style={styles.formContent} showsVerticalScrollIndicator={false}>
+                                <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>Multi-factor authorization for {user?.email}</Text>
+
+                                <View style={styles.stepIndicator}>
+                                    {[1, 2, 3].map((step) => (
+                                        <View key={step} style={styles.stepRow}>
+                                            <View style={[styles.stepDot, { backgroundColor: theme.inputBackground, borderColor: theme.border }, cpStep >= step && { backgroundColor: theme.primary, borderColor: theme.primary }]}>
+                                                <Text style={[styles.stepDotText, cpStep >= step && { color: '#fff' }]}>{cpStep > step ? '✓' : step}</Text>
+                                            </View>
+                                            <Text style={[styles.stepLabel, { color: theme.textSecondary }, cpStep >= step && { color: theme.primary }]}>
+                                                {step === 1 ? 'AUTH' : step === 2 ? 'VERIFY' : 'HARDEN'}
+                                            </Text>
+                                            {step < 3 && <View style={[styles.stepLine, { backgroundColor: theme.border }, cpStep > step && { backgroundColor: theme.primary }]} />}
+                                        </View>
+                                    ))}
                                 </View>
-                            ))}
+
+                                {cpStep === 1 && (
+                                    <View>
+                                        <Text style={[styles.cpInfoText, { color: theme.textSecondary }]}>
+                                            Authorize this credential update by requesting a secure 6-digit access token to your registered email.
+                                        </Text>
+                                        <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.primary, marginTop: 20 }]} onPress={handleSendOtp} disabled={cpLoading}>
+                                            {cpLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>REQUEST ACCESS TOKEN</Text>}
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+
+                                {cpStep === 2 && (
+                                    <View>
+                                        <TextInput
+                                            style={[styles.input, styles.otpInput, { backgroundColor: theme.inputBackground, borderColor: theme.primary, color: theme.text }]}
+                                            value={cpOtp}
+                                            onChangeText={setCpOtp}
+                                            placeholder="000000"
+                                            placeholderTextColor={theme.textSecondary}
+                                            keyboardType="number-pad"
+                                            maxLength={6}
+                                        />
+                                        <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.primary }]} onPress={handleVerifyOtp} disabled={cpLoading}>
+                                            {cpLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>AUTHORIZE ACCESS</Text>}
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={handleSendOtp} style={{ marginTop: 20, alignItems: 'center' }}>
+                                            <Text style={{ color: theme.primary, fontWeight: '700', fontSize: 13 }}>DISPATCH NEW TOKEN</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+
+                                {cpStep === 3 && (
+                                    <View>
+                                        <Text style={[styles.label, { color: theme.textSecondary }]}>CURRENT MASTER KEY</Text>
+                                        <TextInput
+                                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
+                                            placeholder="Required for security"
+                                            placeholderTextColor={theme.textSecondary}
+                                            value={currentPassword}
+                                            onChangeText={setCurrentPassword}
+                                            secureTextEntry
+                                        />
+                                        <Text style={[styles.label, { color: theme.textSecondary }]}>NEW MASTER KEY</Text>
+                                        <TextInput
+                                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
+                                            placeholder="Min. 8 characters"
+                                            placeholderTextColor={theme.textSecondary}
+                                            value={newPassword}
+                                            onChangeText={setNewPassword}
+                                            secureTextEntry
+                                        />
+                                        <Text style={[styles.label, { color: theme.textSecondary }]}>RE-ENTER KEY</Text>
+                                        <TextInput
+                                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
+                                            placeholder="Verify integrity"
+                                            placeholderTextColor={theme.textSecondary}
+                                            value={confirmPassword}
+                                            onChangeText={setConfirmPassword}
+                                            secureTextEntry
+                                        />
+                                        <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.primary }]} onPress={handleChangePassword} disabled={isLoading}>
+                                            {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>HARDEN SECURITY</Text>}
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            </ScrollView>
                         </View>
-
-                        {/* Step 1: Send OTP */}
-                        {cpStep === 1 && (
-                            <View>
-                                <Text style={styles.cpInfoText}>
-                                    A verification code will be sent to your email to authorize this change.
-                                </Text>
-                                <TouchableOpacity
-                                    style={[styles.modalButton, styles.saveButton, { marginTop: 16 }]}
-                                    onPress={handleSendOtp}
-                                    disabled={cpLoading}
-                                >
-                                    {cpLoading ? (
-                                        <ActivityIndicator size="small" color="#fff" />
-                                    ) : (
-                                        <Text style={styles.saveButtonText}>Send Verification Code</Text>
-                                    )}
-                                </TouchableOpacity>
-                            </View>
-                        )}
-
-                        {/* Step 2: Verify OTP */}
-                        {cpStep === 2 && (
-                            <View>
-                                <TextInput
-                                    style={[styles.input, styles.otpInput]}
-                                    value={cpOtp}
-                                    onChangeText={setCpOtp}
-                                    placeholder="000000"
-                                    placeholderTextColor={Colors.dark.textSecondary}
-                                    keyboardType="number-pad"
-                                    maxLength={6}
-                                />
-                                <TouchableOpacity
-                                    style={[styles.modalButton, styles.saveButton]}
-                                    onPress={handleVerifyOtp}
-                                    disabled={cpLoading}
-                                >
-                                    {cpLoading ? (
-                                        <ActivityIndicator size="small" color="#fff" />
-                                    ) : (
-                                        <Text style={styles.saveButtonText}>Verify Code</Text>
-                                    )}
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={handleSendOtp} style={{ marginTop: 12, alignItems: 'center' }}>
-                                    <Text style={{ color: Colors.dark.primary, fontSize: 13 }}>Resend Code</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
-
-                        {/* Step 3: Change Password */}
-                        {cpStep === 3 && (
-                            <View>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Current Password"
-                                    placeholderTextColor={Colors.dark.textSecondary}
-                                    value={currentPassword}
-                                    onChangeText={setCurrentPassword}
-                                    secureTextEntry
-                                />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="New Password"
-                                    placeholderTextColor={Colors.dark.textSecondary}
-                                    value={newPassword}
-                                    onChangeText={setNewPassword}
-                                    secureTextEntry
-                                />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Confirm New Password"
-                                    placeholderTextColor={Colors.dark.textSecondary}
-                                    value={confirmPassword}
-                                    onChangeText={setConfirmPassword}
-                                    secureTextEntry
-                                />
-                                <TouchableOpacity
-                                    style={[styles.modalButton, styles.saveButton]}
-                                    onPress={handleChangePassword}
-                                    disabled={isLoading}
-                                >
-                                    <Text style={styles.saveButtonText}>
-                                        {isLoading ? 'Changing...' : 'Change Password'}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
-
-                        <TouchableOpacity
-                            style={[styles.modalButton, styles.cancelButton, { marginTop: 12 }]}
-                            onPress={() => setChangePasswordVisible(false)}
-                        >
-                            <Text style={styles.cancelButtonText}>Cancel</Text>
-                        </TouchableOpacity>
-                    </View>
+                    </KeyboardAvoidingView>
                 </View>
             </Modal>
 
-            {/* Help Center Modal */}
-            <Modal
-                visible={helpCenterVisible}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setHelpCenterVisible(false)}
-            >
+            <Modal visible={helpCenterVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Help Center</Text>
-                        <Text style={styles.modalSubtitle}>
-                            {user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
-                                ? 'Contact Developer Support'
-                                : 'Contact Your Administrator'}
-                        </Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Subject"
-                            placeholderTextColor={Colors.dark.textSecondary}
-                            value={supportSubject}
-                            onChangeText={setSupportSubject}
-                        />
-                        <TextInput
-                            style={[styles.input, styles.textArea]}
-                            placeholder="Describe your issue..."
-                            placeholderTextColor={Colors.dark.textSecondary}
-                            value={supportMessage}
-                            onChangeText={setSupportMessage}
-                            multiline
-                            numberOfLines={4}
-                        />
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.rowButton, styles.cancelButton]}
-                                onPress={() => setHelpCenterVisible(false)}
-                            >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.rowButton, styles.saveButton]}
-                                onPress={handleSubmitSupport}
-                                disabled={isLoading}
-                            >
-                                <Text style={styles.saveButtonText}>
-                                    {isLoading ? 'Sending...' : 'Send'}
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+                        <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                            <View style={styles.modalHeader}>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>Liaison Hub</Text>
+                                <TouchableOpacity onPress={() => setHelpCenterVisible(false)} style={[styles.closeBtn, { backgroundColor: theme.inputBackground }]}>
+                                    <FontAwesome name="times" size={16} color={theme.textSecondary} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView style={styles.formContent} showsVerticalScrollIndicator={false}>
+                                <Text style={[styles.modalSubtitle, { color: theme.textSecondary, textAlign: 'left', marginBottom: 20 }]}>
+                                    {user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
+                                        ? 'Direct encryption to developer support operations.'
+                                        : 'Contact your organization administrator for protocol clearance.'}
                                 </Text>
-                            </TouchableOpacity>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>SUBJECT</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
+                                    placeholder="Brief summary"
+                                    placeholderTextColor={theme.textSecondary}
+                                    value={supportSubject}
+                                    onChangeText={setSupportSubject}
+                                />
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>DESCRIPTION</Text>
+                                <TextInput
+                                    style={[styles.input, styles.textArea, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
+                                    placeholder="Explain your inquiry in detail..."
+                                    placeholderTextColor={theme.textSecondary}
+                                    value={supportMessage}
+                                    onChangeText={setSupportMessage}
+                                    multiline
+                                    numberOfLines={4}
+                                />
+                                <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.primary }]} onPress={handleSubmitSupport} disabled={isLoading}>
+                                    {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>TRANSMIT INQUIRY</Text>}
+                                </TouchableOpacity>
+                            </ScrollView>
                         </View>
-                    </View>
+                    </KeyboardAvoidingView>
                 </View>
             </Modal>
-        </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.dark.background,
-    },
-    centered: {
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    content: {
-        paddingBottom: Spacing.xxl,
-    },
-    profileHeader: {
-        alignItems: 'center',
-        paddingVertical: Spacing.xl,
-        backgroundColor: Colors.dark.cardBackground,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.dark.border,
-    },
-    avatarContainer: {
-        position: 'relative',
-        marginBottom: Spacing.md,
-    },
+    container: { flex: 1 },
+    centered: { justifyContent: 'center', alignItems: 'center' },
+    content: { paddingBottom: 60 },
+    profileHeader: { alignItems: 'center', paddingVertical: 40, borderBottomWidth: 1.5 },
+    avatarContainer: { position: 'relative', marginBottom: 20 },
     avatar: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: Colors.dark.primary,
+        width: 110,
+        height: 110,
+        borderRadius: 55,
         alignItems: 'center',
         justifyContent: 'center',
-        elevation: 10,
-        shadowColor: Colors.dark.primary,
-        shadowOffset: { width: 0, height: 4 },
+        elevation: 12,
+        shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowRadius: 10,
+        borderWidth: 4,
+        borderColor: 'rgba(255,255,255,0.1)',
     },
-    avatarText: {
-        fontSize: 44,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-    },
-    userName: {
-        fontSize: 22,
-        fontWeight: '800',
-        color: Colors.dark.text,
-        marginBottom: 4,
-        paddingHorizontal: Spacing.md,
-    },
-    userEmail: {
-        fontSize: FontSizes.md,
-        color: Colors.dark.textSecondary,
-        marginBottom: Spacing.md,
-    },
-    roleBadgeContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexWrap: 'wrap',
-        gap: 8,
-        paddingHorizontal: Spacing.md,
-    },
-    roleBadge: {
-        backgroundColor: 'rgba(59, 130, 246, 0.15)',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: BorderRadius.full,
-        borderWidth: 1,
-        borderColor: 'rgba(59, 130, 246, 0.3)',
-        marginBottom: 4,
-    },
-    roleBadgeText: {
-        fontSize: 12,
-        color: Colors.dark.primary,
-        fontWeight: 'bold',
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-    },
-    statsRow: {
-        flexDirection: 'row',
-        backgroundColor: Colors.dark.cardBackground,
-        margin: Spacing.md,
-        padding: Spacing.md,
-        borderRadius: BorderRadius.lg,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
-    },
-    statBox: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    statDivider: {
-        width: 1,
-        height: 30,
-        backgroundColor: Colors.dark.border,
-        alignSelf: 'center',
-    },
-    statValue: {
-        fontSize: 18,
-        fontWeight: '800',
-        color: Colors.dark.text,
-    },
-    statLabel: {
-        fontSize: 10,
-        color: Colors.dark.textSecondary,
-        fontWeight: '600',
-        textTransform: 'uppercase',
-        marginTop: 2,
-    },
-    section: {
-        marginTop: Spacing.lg,
-        paddingHorizontal: Spacing.md,
-    },
-    sectionTitle: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        color: Colors.dark.textSecondary,
-        marginBottom: Spacing.sm,
-        marginLeft: 4,
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-    },
-    menuGroup: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.lg,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
-    },
-    menuItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: Spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.dark.border,
-    },
-    menuIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: Spacing.md,
-    },
-    menuIconDanger: {
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    },
-    menuContent: {
-        flex: 1,
-    },
-    menuTitle: {
-        fontSize: FontSizes.md,
-        fontWeight: '600',
-        color: Colors.dark.text,
-    },
-    menuTitleDanger: {
-        color: Colors.dark.error,
-    },
-    menuSubtitle: {
-        fontSize: 12,
-        color: Colors.dark.textSecondary,
-        marginTop: 2,
-    },
-    footer: {
-        alignItems: 'center',
-        paddingVertical: Spacing.xxl,
-    },
-    footerText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: Colors.dark.textSecondary,
-    },
-    footerSubtext: {
-        fontSize: 10,
-        color: Colors.dark.textSecondary,
-        marginTop: 4,
-    },
-    // Modal styles
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: Spacing.lg,
-    },
-    modalContent: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.lg,
-        width: '100%',
-        maxWidth: 400,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
-        marginBottom: Spacing.md,
-        textAlign: 'center',
-    },
-    modalSubtitle: {
-        fontSize: 14,
-        color: Colors.dark.textSecondary,
-        marginBottom: Spacing.md,
-        textAlign: 'center',
-    },
-    input: {
-        backgroundColor: Colors.dark.background,
-        borderRadius: BorderRadius.md,
-        padding: Spacing.md,
-        color: Colors.dark.text,
-        fontSize: 16,
-        marginBottom: Spacing.md,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
-    },
-    textArea: {
-        height: 100,
-        textAlignVertical: 'top',
-    },
-    modalButtons: {
-        flexDirection: 'row',
-        gap: Spacing.md,
-        marginTop: Spacing.sm,
-    },
-    rowButton: {
-        flex: 1,
-    },
-    modalButton: {
-        paddingVertical: 14,
-        paddingHorizontal: Spacing.md,
-        borderRadius: BorderRadius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 48,
-    },
-    cancelButton: {
-        backgroundColor: Colors.dark.background,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
-    },
-    saveButton: {
-        backgroundColor: Colors.dark.primary,
-    },
-    cancelButtonText: {
-        color: Colors.dark.text,
-        fontWeight: '600',
-    },
-    saveButtonText: {
-        color: '#FFFFFF',
-        fontWeight: '600',
-    },
-    // OTP Styles
-    stepIndicator: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    stepRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    stepDot: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: Colors.dark.background,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    stepDotActive: {
-        backgroundColor: Colors.dark.primary,
-        borderColor: Colors.dark.primary,
-    },
-    stepDotText: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        color: Colors.dark.textSecondary,
-    },
-    stepDotTextActive: {
-        color: '#fff',
-    },
-    stepLabel: {
-        fontSize: 10,
-        color: Colors.dark.textSecondary,
-        marginLeft: 4,
-    },
-    stepLabelActive: {
-        color: Colors.dark.primary,
-        fontWeight: '600',
-    },
-    stepLine: {
-        width: 20,
-        height: 2,
-        backgroundColor: Colors.dark.border,
-        marginHorizontal: 4,
-    },
-    stepLineActive: {
-        backgroundColor: Colors.dark.primary,
-    },
-    cpInfoText: {
-        fontSize: 14,
-        color: Colors.dark.textSecondary,
-        lineHeight: 20,
-        textAlign: 'center',
-    },
-    otpInput: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        letterSpacing: 8,
-        textAlign: 'center',
-    },
+    avatarText: { fontSize: 44, fontWeight: '900', color: '#FFFFFF' },
+    userName: { fontSize: 24, fontWeight: '900', marginBottom: 6, paddingHorizontal: 24, letterSpacing: -0.5 },
+    userEmail: { fontSize: 14, fontWeight: '500', marginBottom: 20 },
+    roleBadgeContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 10, paddingHorizontal: 20 },
+    roleBadge: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12, borderWidth: 1.2 },
+    roleBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
+    statsRow: { flexDirection: 'row', margin: 20, padding: 20, borderRadius: 24, borderWidth: 1.5 },
+    statBox: { flex: 1, alignItems: 'center' },
+    statDivider: { width: 1.5, height: 35, alignSelf: 'center', opacity: 0.5 },
+    statValue: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
+    statLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginTop: 4 },
+    section: { marginTop: 24, paddingHorizontal: 20 },
+    sectionTitle: { fontSize: 11, fontWeight: '900', marginBottom: 12, marginLeft: 4, letterSpacing: 2 },
+    menuGroup: { borderRadius: 24, overflow: 'hidden', borderWidth: 1.5 },
+    menuItem: { flexDirection: 'row', alignItems: 'center', padding: 18, borderBottomWidth: 1.5 },
+    menuIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    menuContent: { flex: 1 },
+    menuTitle: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
+    menuSubtitle: { fontSize: 12, fontWeight: '500', marginTop: 3 },
+    footer: { alignItems: 'center', paddingVertical: 40 },
+    footerText: { fontSize: 13, fontWeight: '800', letterSpacing: 1 },
+    footerSubtext: { fontSize: 10, fontWeight: '600', marginTop: 6, opacity: 0.8 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' },
+    keyboardView: { width: '100%' },
+    modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: Platform.OS === 'ios' ? 44 : 24, borderTopWidth: 1.5 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+    closeBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+    modalTitle: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
+    modalSubtitle: { fontSize: 14, fontWeight: '500', marginBottom: 24 },
+    formContent: { marginBottom: 10 },
+    label: { fontSize: 11, fontWeight: '800', marginBottom: 10, marginTop: 12, letterSpacing: 1.5 },
+    input: { borderRadius: 16, padding: 16, fontSize: 15, fontWeight: '500', marginBottom: 16, borderWidth: 1.5 },
+    textArea: { height: 120, textAlignVertical: 'top' },
+    submitBtn: { padding: 18, borderRadius: 18, alignItems: 'center', marginTop: 12, shadowOpacity: 0.2 },
+    submitBtnText: { color: '#fff', fontSize: 14, fontWeight: '900', letterSpacing: 1.5 },
+    stepIndicator: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginVertical: 30 },
+    stepRow: { flexDirection: 'row', alignItems: 'center' },
+    stepDot: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+    stepDotText: { fontSize: 14, fontWeight: '900' },
+    stepLabel: { fontSize: 9, fontWeight: '900', marginLeft: 8, letterSpacing: 1 },
+    stepLine: { width: 25, height: 2.5, marginHorizontal: 10, borderRadius: 1 },
+    cpInfoText: { fontSize: 14, lineHeight: 22, textAlign: 'center', fontWeight: '500' },
+    otpInput: { fontSize: 28, fontWeight: '900', letterSpacing: 12, textAlign: 'center', paddingVertical: 24, borderRadius: 20 },
 });

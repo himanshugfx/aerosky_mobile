@@ -59,6 +59,14 @@ export interface Battery {
     createdAt: string;
 }
 
+export interface OrderUpload {
+    id: string;
+    orderId: string;
+    fileData: string;
+    fileName: string;
+    createdAt: string;
+}
+
 export interface Order {
     id: string;
     contractNumber: string;
@@ -86,6 +94,7 @@ export interface Order {
     cocData?: string;
     createdAt: string;
     updatedAt: string;
+    uploads?: OrderUpload[];
 }
 
 export interface Drone {
@@ -147,6 +156,7 @@ export interface InventoryComponent {
     name: string;
     description: string | null;
     quantity: number;
+    category: string;
 }
 
 export interface InventoryTransaction {

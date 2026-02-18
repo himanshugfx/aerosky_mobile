@@ -1,5 +1,6 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -10,9 +11,10 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    useColorScheme
 } from 'react-native';
-import Colors from '../../constants/Colors';
+import Colors, { BorderRadius, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
 
 // Accordion Component
@@ -60,21 +62,42 @@ const AccordionItem = ({
 };
 
 export default function DroneDetailScreen() {
-    const { id } = useLocalSearchParams();
+    const ids = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
     const {
-        drones, teamMembers, subcontractors, batteries,
-        fetchDrones, fetchTeamMembers, fetchSubcontractors, fetchBatteries,
-        assignAccountableManager, updateWebPortal, updateManufacturedUnits, updateRecurringData
+        drones,
+        teamMembers,
+        subcontractors,
+        fetchDrones,
+        fetchTeamMembers,
+        fetchSubcontractors,
+        fetchBatteries,
+        assignAccountableManager,
+        updateWebPortal,
+        updateManufacturedUnits,
+        updateRecurringData
     } = useComplianceStore();
 
-    const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'one-time' | 'recurring'>('one-time');
+    // Derive drone data directly from store
+    const droneData = drones.find(d => d.id === ids.id);
+    const [isLoading, setIsLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'info' | 'ops' | 'compliance'>('info');
     const [webPortalLink, setWebPortalLink] = useState('');
-    const [newUnit, setNewUnit] = useState({ serialNumber: '', uin: '' });
+
+    // Accordion states
+    const [sections, setSections] = useState<Record<string, boolean>>({
+        general: true,
+        specs: false,
+        pic: false,
+        maintenance: false,
+        docs: false,
+    });
+
+
 
     // Recurring data states
-    const [newPersonnel, setNewPersonnel] = useState({ date: '', position: '', previous: '', new: '' });
     const [newStaffComp, setNewStaffComp] = useState({ date: '', staff: '', examiner: '', result: '' });
     const [newTraining, setNewTraining] = useState({ date: '', trainer: '', session: '', description: '', duration: '' });
     const [newEquipment, setNewEquipment] = useState({ date: '', equipment: '', serial: '', type: '', doneBy: '' });
@@ -82,40 +105,42 @@ export default function DroneDetailScreen() {
     const [newOperational, setNewOperational] = useState({ date: '', operation: '', uin: '', serialNumber: '', transferredTo: '' });
     const [newMaterial, setNewMaterial] = useState({ date: '', material: '', quantity: '', vendor: '' });
     const [newUasSold, setNewUasSold] = useState({ date: '', unitSerialNumber: '', soldTo: '' });
+    const [newUnit, setNewUnit] = useState({ serialNumber: '', uin: '' });
+    const [newPersonnel, setNewPersonnel] = useState({ date: '', position: '', previous: '', new: '' });
     const [recordType, setRecordType] = useState<'material' | 'uas'>('material');
 
-    const drone = drones.find(d => d.id === id);
-
     useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
+        const load = async () => {
+            setIsLoading(true);
             await Promise.all([fetchDrones(), fetchTeamMembers(), fetchSubcontractors(), fetchBatteries()]);
-            setLoading(false);
+            setIsLoading(false);
         };
-        loadData();
-    }, [id]);
+        load();
+    }, [ids.id]);
 
     useEffect(() => {
-        if (drone?.uploads?.webPortalLink) setWebPortalLink(drone.uploads.webPortalLink);
-    }, [drone]);
+        if (droneData?.uploads?.webPortalLink) setWebPortalLink(droneData.uploads.webPortalLink);
+    }, [droneData]);
 
     const addRecurring = async (key: string, data: any, reset: () => void) => {
-        if (!drone) return;
-        const current = (drone as any).recurringData?.[key] || [];
-        await updateRecurringData(drone.id, { [key]: [...current, data] });
+        if (!droneData) return;
+        const current = (droneData as any).recurringData?.[key] || [];
+        await updateRecurringData(droneData.id, { [key]: [...current, data] });
         reset();
         Alert.alert('Success', 'Record added');
     };
 
     const deleteRecurring = async (key: string, index: number) => {
-        if (!drone) return;
-        const current = (drone as any).recurringData?.[key] || [];
+        if (!droneData) return;
+        const current = (droneData as any).recurringData?.[key] || [];
         const updated = current.filter((_: any, i: number) => i !== index);
-        await updateRecurringData(drone.id, { [key]: updated });
+        await updateRecurringData(droneData.id, { [key]: updated });
     };
 
-    if (loading) return <View style={styles.loadingContainer}><ActivityIndicator size="large" color={Colors.dark.primary} /></View>;
-    if (!drone) return <View style={styles.errorContainer}><Text style={styles.errorText}>Drone not found</Text></View>;
+    if (isLoading) return <View style={styles.loadingContainer}><ActivityIndicator size="large" color={Colors.dark.primary} /></View>;
+    if (!droneData) return <View style={styles.errorContainer}><Text style={styles.errorText}>Drone not found</Text></View>;
+
+    const drone = droneData; // Alias for cleaner usage below
 
     const uploads = drone.uploads || {};
     const recurring = (drone as any).recurringData || {};
@@ -166,16 +191,16 @@ export default function DroneDetailScreen() {
 
             {/* Tabs */}
             <View style={styles.tabBar}>
-                <TouchableOpacity style={[styles.tab, activeTab === 'one-time' && styles.activeTab]} onPress={() => setActiveTab('one-time')}>
-                    <Text style={[styles.tabText, activeTab === 'one-time' && styles.activeTabText]}>One Time</Text>
+                <TouchableOpacity style={[styles.tab, activeTab === 'info' && styles.activeTab]} onPress={() => setActiveTab('info')}>
+                    <Text style={[styles.tabText, activeTab === 'info' && styles.activeTabText]}>One Time</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.tab, activeTab === 'recurring' && styles.activeTab]} onPress={() => setActiveTab('recurring')}>
-                    <Text style={[styles.tabText, activeTab === 'recurring' && styles.activeTabText]}>Recurring</Text>
+                <TouchableOpacity style={[styles.tab, activeTab === 'ops' && styles.activeTab]} onPress={() => setActiveTab('ops')}>
+                    <Text style={[styles.tabText, activeTab === 'ops' && styles.activeTabText]}>Recurring</Text>
                 </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.scrollContent} contentContainerStyle={styles.scrollInside}>
-                {activeTab === 'one-time' ? (
+                {activeTab === 'info' ? (
                     <View style={styles.section}>
                         {/* 1. Organizational Manual */}
                         <AccordionItem title="1. Organizational Manual" description="Team members with name, phone, email and position" icon="users" isComplete={checks.orgManual}>
@@ -378,63 +403,64 @@ export default function DroneDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.dark.background },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.dark.background },
-    errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.dark.background },
-    errorText: { color: Colors.dark.text, fontSize: 16 },
-    detailHeader: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: Colors.dark.cardBackground, paddingTop: Platform.OS === 'ios' ? 60 : 40 },
-    backButton: { marginRight: 12 },
+    container: { flex: 1 },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    errorText: { fontSize: 16, fontWeight: '600' },
+    detailHeader: { flexDirection: 'row', alignItems: 'center', padding: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, borderBottomWidth: 1.5 },
+    backButton: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
     droneInfo: { flex: 1 },
-    droneName: { fontSize: 20, fontWeight: 'bold', color: Colors.dark.text },
-    droneStatus: { fontSize: 10, color: Colors.dark.primary, fontWeight: 'bold', marginTop: 2, letterSpacing: 1 },
-    tabBar: { flexDirection: 'row', backgroundColor: Colors.dark.cardBackground, borderBottomWidth: 1, borderBottomColor: Colors.dark.border },
-    tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
-    activeTab: { borderBottomWidth: 3, borderBottomColor: Colors.dark.primary },
-    tabText: { color: Colors.dark.textSecondary, fontSize: 14, fontWeight: '600' },
-    activeTabText: { color: Colors.dark.primary },
+    droneName: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
+    droneStatus: { fontSize: 10, fontWeight: '900', marginTop: 4, letterSpacing: 2, textTransform: 'uppercase' },
+    tabBar: { flexDirection: 'row', borderBottomWidth: 1.5 },
+    tab: { flex: 1, paddingVertical: 16, alignItems: 'center' },
+    activeTab: { borderBottomWidth: 3 },
+    tabText: { fontSize: 12, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
     scrollContent: { flex: 1 },
-    scrollInside: { padding: 12, paddingBottom: 40 },
-    section: { gap: 10 },
-    accordionContainer: { backgroundColor: Colors.dark.cardBackground, borderRadius: 12, overflow: 'hidden' },
-    accordionHeader: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
-    iconBox: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+    scrollInside: { padding: 16, paddingBottom: 60 },
+    section: { gap: 16 },
+    accordionContainer: { borderRadius: 24, overflow: 'hidden', borderWidth: 1.5, marginBottom: 16 },
+    accordionHeader: { flexDirection: 'row', alignItems: 'center', padding: 18, gap: 14 },
+    iconBox: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     headerInfo: { flex: 1 },
-    titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    accordionTitle: { fontSize: 13, fontWeight: '700', color: Colors.dark.text },
-    statusBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-    statusBadgeText: { fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase' },
-    accordionSubtitle: { fontSize: 11, color: Colors.dark.textSecondary, marginTop: 2 },
-    accordionContent: { padding: 12, borderTopWidth: 1, borderTopColor: Colors.dark.border },
-    itemRow: { flexDirection: 'row', alignItems: 'center', padding: 8, backgroundColor: Colors.dark.inputBackground, borderRadius: 8, gap: 8, marginBottom: 6 },
-    itemIconSmall: { width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.dark.primary + '20', alignItems: 'center', justifyContent: 'center' },
-    itemName: { color: Colors.dark.text, fontSize: 13, fontWeight: '600' },
-    itemRole: { color: Colors.dark.textSecondary, fontSize: 11 },
-    itemBadge: { color: Colors.dark.primary, fontSize: 11, fontWeight: 'bold' },
-    linkButton: { marginTop: 8, alignItems: 'center' },
-    linkButtonText: { color: Colors.dark.primary, fontSize: 13 },
-    uploadBox: { height: 80, borderWidth: 1, borderStyle: 'dashed', borderColor: Colors.dark.border, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 8 },
-    uploadText: { color: Colors.dark.textSecondary, fontSize: 12 },
-    sectionLabel: { color: Colors.dark.textSecondary, fontSize: 12, fontWeight: 'bold', marginBottom: 8 },
-    managerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    managerCard: { width: '48%', padding: 10, borderRadius: 8, backgroundColor: Colors.dark.inputBackground, borderWidth: 1, borderColor: Colors.dark.border },
+    titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    accordionTitle: { fontSize: 15, fontWeight: '800', letterSpacing: -0.3 },
+    statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+    statusBadgeText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+    accordionSubtitle: { fontSize: 12, marginTop: 4, fontWeight: '500' },
+    accordionContent: { padding: 18, borderTopWidth: 1.5 },
+    itemRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, gap: 12, marginBottom: 8, borderWidth: 1 },
+    itemIconSmall: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    itemName: { fontSize: 14, fontWeight: '700' },
+    itemRole: { fontSize: 12, fontWeight: '500' },
+    itemBadge: { fontSize: 11, fontWeight: '800' },
+    linkButton: { marginTop: 12, paddingVertical: 8, alignItems: 'center' },
+    linkButtonText: { fontSize: 14, fontWeight: '700' },
+    uploadBox: { height: 100, borderWidth: 2, borderStyle: 'dashed', borderRadius: 20, alignItems: 'center', justifyContent: 'center', gap: 10 },
+    uploadText: { fontSize: 13, fontWeight: '600' },
+    sectionLabel: { fontSize: 11, fontWeight: '900', marginBottom: 12, letterSpacing: 1.5, textTransform: 'uppercase' },
+    managerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    managerCard: { width: '48%', padding: 14, borderRadius: 18, borderWidth: 1.5 },
+    managerName: { fontSize: 14, fontWeight: '800' },
+    managerRole: { fontSize: 12, fontWeight: '500', marginTop: 4 },
+    unitRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, borderRadius: 18, marginBottom: 10, borderWidth: 1 },
+    unitSn: { fontSize: 15, fontWeight: '800' },
+    unitUin: { fontSize: 12, fontWeight: '700', marginTop: 2 },
+    inputForm: { marginTop: 12, gap: 12, padding: 16, borderRadius: 20, borderWidth: 1, borderStyle: 'dashed' },
+    mobileInput: { borderRadius: 14, padding: 14, fontSize: 14, fontWeight: '500', borderWidth: 1.5 },
+    addRecordBtn: { padding: 16, borderRadius: 16, alignItems: 'center', marginTop: 8 },
+    addRecordBtnText: { color: '#fff', fontSize: 14, fontWeight: '900', letterSpacing: 1 },
+    emptyText: { textAlign: 'center', padding: 24, fontSize: 13, fontStyle: 'italic', fontWeight: '500' },
+    tableContainer: { marginBottom: 16, borderRadius: 16, overflow: 'hidden', borderWidth: 1 },
+    tableHeader: { flexDirection: 'row', padding: 12 },
+    tableHeaderCell: { flex: 1, fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
+    tableRow: { flexDirection: 'row', padding: 14, borderBottomWidth: 1, alignItems: 'center' },
+    tableCell: { flex: 1, fontSize: 12, fontWeight: '600' },
+    toggleRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+    toggleBtn: { flex: 1, padding: 12, borderRadius: 14, alignItems: 'center', borderWidth: 1.5, borderColor: Colors.dark.border },
+    toggleActive: { backgroundColor: Colors.dark.primary, borderColor: Colors.dark.primary },
+    toggleText: { fontSize: 12, fontWeight: '800', letterSpacing: 0.5, color: Colors.dark.textSecondary },
+    activeTabText: { color: Colors.dark.primary },
     activeManager: { borderColor: Colors.dark.primary, backgroundColor: Colors.dark.primary + '15' },
-    managerName: { color: Colors.dark.text, fontSize: 13, fontWeight: '700' },
-    managerRole: { color: Colors.dark.textSecondary, fontSize: 11 },
-    unitRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 10, backgroundColor: Colors.dark.inputBackground, borderRadius: 8, marginBottom: 6 },
-    unitSn: { color: Colors.dark.text, fontSize: 13, fontWeight: 'bold' },
-    unitUin: { color: Colors.dark.primary, fontSize: 11 },
-    inputForm: { marginTop: 10, gap: 8, backgroundColor: 'rgba(255,255,255,0.02)', padding: 10, borderRadius: 8 },
-    mobileInput: { backgroundColor: Colors.dark.inputBackground, borderRadius: 8, padding: 10, color: Colors.dark.text, fontSize: 13, borderWidth: 1, borderColor: Colors.dark.border },
-    addRecordBtn: { backgroundColor: Colors.dark.primary, padding: 12, borderRadius: 8, alignItems: 'center' },
-    addRecordBtnText: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
-    emptyText: { color: Colors.dark.textSecondary, textAlign: 'center', padding: 16, fontSize: 12, fontStyle: 'italic' },
-    tableContainer: { marginBottom: 10 },
-    tableHeader: { flexDirection: 'row', backgroundColor: Colors.dark.inputBackground, padding: 8, borderRadius: 6 },
-    tableHeaderCell: { flex: 1, color: Colors.dark.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
-    tableRow: { flexDirection: 'row', padding: 8, borderBottomWidth: 1, borderBottomColor: Colors.dark.border, alignItems: 'center' },
-    tableCell: { flex: 1, color: Colors.dark.text, fontSize: 11 },
-    toggleRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-    toggleBtn: { flex: 1, padding: 8, borderRadius: 6, backgroundColor: Colors.dark.inputBackground, alignItems: 'center' },
-    toggleActive: { backgroundColor: Colors.dark.primary },
-    toggleText: { color: Colors.dark.text, fontSize: 11, fontWeight: 'bold' },
 });

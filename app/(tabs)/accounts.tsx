@@ -13,29 +13,29 @@ import {
     TouchableOpacity,
     View,
     ActivityIndicator,
-    Modal
+    Modal,
+    useColorScheme,
+    Platform,
+    KeyboardAvoidingView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
-import { apiClient } from '../../lib/api';
+import { reimbursementsApi } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
-
-// Helper to convert file URI to Base64 (simplified)
-const fileToBase64 = async (uri: string) => {
-    // In a real Expo app, we'd use expo-file-system
-    // For now, mirroring the web logic as a mock/placeholder
-    return "data:application/pdf;base64,JVBERi0xLjQKJ..."
-};
 
 export default function AccountsScreen() {
     const router = useRouter();
     const { user } = useAuthStore();
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
+
     const [activeTab, setActiveTab] = useState<'my' | 'admin'>('my');
     const [reimbursements, setReimbursements] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [updatingId, setUpdatingId] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -49,8 +49,8 @@ export default function AccountsScreen() {
     const fetchReimbursements = async () => {
         try {
             setLoading(true);
-            const res = await apiClient.get('/api/reimbursements');
-            setReimbursements(res.data);
+            const data = await reimbursementsApi.list();
+            setReimbursements(data);
         } catch (error) {
             console.error('Failed to fetch:', error);
         } finally {
@@ -76,9 +76,8 @@ export default function AccountsScreen() {
             });
 
             if (!result.canceled) {
-                // Mocking base64 conversion for this environment
                 setFormData(prev => ({ ...prev, billData: 'data:image/png;base64,iVBORw0KGgo...' }));
-                Alert.alert('Success', 'File attached successfully');
+                Alert.alert('Success', 'Proof of expenditure successfully attached.');
             }
         } catch (err) {
             console.error('Picker error:', err);
@@ -87,19 +86,19 @@ export default function AccountsScreen() {
 
     const handleSubmit = async () => {
         if (!formData.name || !formData.amount || !formData.billData) {
-            Alert.alert('Error', 'Please fill all fields and attach a bill');
+            Alert.alert('Required Information', 'Description, amount, and digitized bill are required.');
             return;
         }
 
         if (isNaN(parseFloat(formData.amount)) || parseFloat(formData.amount) <= 0) {
-            Alert.alert('Error', 'Please enter a valid amount');
+            Alert.alert('Input Error', 'Please specify a valid numeric amount.');
             return;
         }
 
         setSubmitting(true);
         try {
-            const res = await apiClient.post('/api/reimbursements', formData);
-            Alert.alert('Success', 'Reimbursement submitted successfully!');
+            await reimbursementsApi.submit(formData as any);
+            Alert.alert('Filing Successful', 'Your reimbursement request has been logged for review.');
             setShowForm(false);
             setFormData({
                 name: '',
@@ -109,150 +108,212 @@ export default function AccountsScreen() {
             });
             fetchReimbursements();
         } catch (error: any) {
-            const msg = error.response?.data?.error || 'Failed to submit';
-            Alert.alert('Error', msg);
+            const errorData = error.response?.data;
+            const msg = errorData?.details ? `${errorData.error}: ${errorData.details}` : (errorData?.error || 'Synchronization failed.');
+            Alert.alert('Filing Failed', msg);
         } finally {
             setSubmitting(false);
         }
     };
 
+    const handleStatusChange = async (id: string, newStatus: string) => {
+        setUpdatingId(id);
+        try {
+            await reimbursementsApi.updateStatus(id, newStatus);
+            setReimbursements(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
+        } catch (error: any) {
+            Alert.alert('Error', error.response?.data?.error || 'Failed to update status');
+        } finally {
+            setUpdatingId(null);
+        }
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Approved': return theme.success;
+            case 'Completed': return '#3b82f6';
+            case 'Rejected': return theme.error;
+            default: return theme.warning;
+        }
+    };
+
     const renderItem = ({ item }: { item: any }) => (
-        <View style={styles.reimbursementCard}>
+        <View style={[styles.reimbursementCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <View style={styles.cardHeader}>
-                <View style={styles.iconBox}>
-                    <FontAwesome name="money" size={16} color={Colors.dark.primary} />
+                <View style={[styles.iconBox, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '30' }]}>
+                    <FontAwesome name="money" size={14} color={theme.primary} />
                 </View>
                 <View style={styles.cardMainInfo}>
-                    <Text style={styles.cardTitle}>{item.name}</Text>
-                    <Text style={styles.cardDate}>{new Date(item.date).toLocaleDateString()}</Text>
+                    <Text style={[styles.cardTitle, { color: theme.text }]}>{item.name}</Text>
+                    <Text style={[styles.cardDate, { color: theme.textSecondary }]}>{new Date(item.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}</Text>
                 </View>
                 <View style={[
                     styles.statusBadge,
-                    item.status === 'Approved' ? styles.statusApproved :
-                        item.status === 'Rejected' ? styles.statusRejected : styles.statusPending
+                    { backgroundColor: getStatusColor(item.status) + '15' }
                 ]}>
                     <Text style={[
                         styles.statusText,
-                        item.status === 'Approved' ? styles.statusTextApproved :
-                            item.status === 'Rejected' ? styles.statusTextRejected : styles.statusTextPending
+                        { color: getStatusColor(item.status) }
                     ]}>
                         {item.status.toUpperCase()}
                     </Text>
                 </View>
             </View>
 
-            <View style={styles.cardFooter}>
-                <Text style={styles.amountText}>₹ {item.amount.toLocaleString()}</Text>
+            <View style={[styles.cardFooter, { borderTopColor: theme.border }]}>
+                <Text style={[styles.amountText, { color: theme.text }]}>₹ {parseFloat(item.amount).toLocaleString()}</Text>
                 {isAdmin && (
-                    <Text style={styles.userLabel}>{item.user?.fullName?.split(' ')[0] || 'User'}</Text>
+                    <View style={[styles.userBadge, { backgroundColor: theme.inputBackground }]}>
+                        <FontAwesome name="user-o" size={10} color={theme.textSecondary} style={{ marginRight: 6 }} />
+                        <Text style={[styles.userLabel, { color: theme.textSecondary }]}>{item.user?.fullName?.split(' ')[0] || 'Member'}</Text>
+                    </View>
                 )}
             </View>
+
+            {isAdmin && activeTab === 'admin' && (
+                <View style={[styles.statusActions, { borderTopColor: theme.border }]}>
+                    {['Pending', 'Approved', 'Completed'].map(s => (
+                        <TouchableOpacity
+                            key={s}
+                            style={[
+                                styles.statusBtn,
+                                {
+                                    backgroundColor: item.status === s ? getStatusColor(s) + '20' : theme.inputBackground,
+                                    borderColor: item.status === s ? getStatusColor(s) + '50' : theme.border,
+                                }
+                            ]}
+                            onPress={() => handleStatusChange(item.id, s)}
+                            disabled={item.status === s || updatingId === item.id}
+                        >
+                            {updatingId === item.id ? (
+                                <ActivityIndicator size="small" color={theme.textSecondary} />
+                            ) : (
+                                <Text style={[
+                                    styles.statusBtnText,
+                                    { color: item.status === s ? getStatusColor(s) : theme.textSecondary }
+                                ]}>{s.toUpperCase()}</Text>
+                            )}
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            )}
         </View>
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar style="light" />
 
-            {/* Tab Switcher */}
             {isAdmin && (
-                <View style={styles.tabContainer}>
+                <View style={[styles.tabContainer, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
                     <TouchableOpacity
-                        style={[styles.tab, activeTab === 'my' && styles.activeTab]}
+                        style={[styles.tab, activeTab === 'my' && { backgroundColor: theme.primary + '10', borderColor: theme.primary + '30' }]}
                         onPress={() => setActiveTab('my')}
                     >
-                        <Text style={[styles.tabText, activeTab === 'my' && styles.activeTabText]}>My Requests</Text>
+                        <Text style={[styles.tabText, { color: activeTab === 'my' ? theme.primary : theme.textSecondary }]}>PERSONAL</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[styles.tab, activeTab === 'admin' && styles.activeTab]}
+                        style={[styles.tab, activeTab === 'admin' && { backgroundColor: theme.primary + '10', borderColor: theme.primary + '30' }]}
                         onPress={() => setActiveTab('admin')}
                     >
-                        <Text style={[styles.tabText, activeTab === 'admin' && styles.activeTabText]}>All Requests</Text>
+                        <Text style={[styles.tabText, { color: activeTab === 'admin' ? theme.primary : theme.textSecondary }]}>ORGANIZATION</Text>
                     </TouchableOpacity>
                 </View>
             )}
 
             {loading && !refreshing ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color={Colors.dark.primary} />
+                    <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : (
                 <FlatList
-                    data={reimbursements.filter(r => activeTab === 'admin' || r.userId === user?.id)}
+                    data={reimbursements.filter(r => {
+                        const isMine = String(r.userId) === String(user?.id);
+                        return activeTab === 'admin' || isMine;
+                    })}
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.listContent}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.dark.primary} />
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
                     }
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
-                            <FontAwesome name="file-text-o" size={48} color={Colors.dark.textSecondary} />
-                            <Text style={styles.emptyText}>No reimbursement records found</Text>
+                            <View style={[styles.emptyIconBox, { backgroundColor: theme.cardBackground }]}>
+                                <FontAwesome name="file-text-o" size={40} color={theme.border} />
+                            </View>
+                            <Text style={[styles.emptyTitle, { color: theme.text }]}>No Ledgers Found</Text>
+                            <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>Your financial reimbursement filings will appear here.</Text>
                         </View>
                     }
                 />
             )}
 
-            {/* FAB */}
             <TouchableOpacity
-                style={styles.fab}
+                style={[styles.fab, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
                 onPress={() => setShowForm(true)}
             >
-                <FontAwesome name="plus" size={24} color="#white" />
+                <FontAwesome name="plus" size={24} color="#fff" />
             </TouchableOpacity>
 
-            {/* Submit Modal */}
             <Modal visible={showForm} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>New Reimbursement</Text>
-                            <TouchableOpacity onPress={() => setShowForm(false)}>
-                                <FontAwesome name="close" size={20} color={Colors.dark.text} />
-                            </TouchableOpacity>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        style={styles.keyboardView}
+                    >
+                        <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                            <View style={styles.modalHeader}>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>File Claim</Text>
+                                <TouchableOpacity onPress={() => setShowForm(false)} style={[styles.closeBtn, { backgroundColor: theme.inputBackground }]}>
+                                    <FontAwesome name="times" size={16} color={theme.textSecondary} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView style={styles.formContent} showsVerticalScrollIndicator={false}>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>CLAIM DESCRIPTION</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
+                                    placeholder="e.g. Flight Mission Logistics"
+                                    placeholderTextColor={theme.textSecondary}
+                                    value={formData.name}
+                                    onChangeText={text => setFormData({ ...formData, name: text })}
+                                />
+
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>AMOUNT (INR)</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
+                                    placeholder="0.00"
+                                    placeholderTextColor={theme.textSecondary}
+                                    keyboardType="numeric"
+                                    value={formData.amount}
+                                    onChangeText={text => setFormData({ ...formData, amount: text })}
+                                />
+
+                                <TouchableOpacity
+                                    style={[styles.uploadBtn, { backgroundColor: (formData.billData ? theme.success : theme.accent) + '10', borderColor: (formData.billData ? theme.success : theme.accent) + '50' }]}
+                                    onPress={handlePickDocument}
+                                >
+                                    <FontAwesome name={formData.billData ? "check-circle" : "paperclip"} size={18} color={formData.billData ? theme.success : theme.accent} />
+                                    <Text style={[styles.uploadBtnText, { color: formData.billData ? theme.success : theme.accent }]}>
+                                        {formData.billData ? "Digitized bill ready" : "Attach digitized claim receipt"}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.submitBtn, { backgroundColor: theme.primary }, submitting && styles.disabledBtn]}
+                                    onPress={handleSubmit}
+                                    disabled={submitting}
+                                >
+                                    {submitting ? (
+                                        <ActivityIndicator color="#fff" />
+                                    ) : (
+                                        <Text style={styles.submitBtnText}>SUBMIT LOG FOR REVIEW</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </ScrollView>
                         </View>
-
-                        <ScrollView style={styles.formContent}>
-                            <Text style={styles.label}>Expense Name</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Hotel, Travel, etc."
-                                placeholderTextColor={Colors.dark.textSecondary}
-                                value={formData.name}
-                                onChangeText={text => setFormData({ ...formData, name: text })}
-                            />
-
-                            <Text style={styles.label}>Amount (INR)</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="0.00"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                                keyboardType="numeric"
-                                value={formData.amount}
-                                onChangeText={text => setFormData({ ...formData, amount: text })}
-                            />
-
-                            <TouchableOpacity style={styles.uploadBtn} onPress={handlePickDocument}>
-                                <FontAwesome name={formData.billData ? "check-circle" : "paperclip"} size={20} color="#fff" />
-                                <Text style={styles.uploadBtnText}>
-                                    {formData.billData ? "Bill Attached" : "Attach Bill (Image/PDF)"}
-                                </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.submitBtn, submitting && styles.disabledBtn]}
-                                onPress={handleSubmit}
-                                disabled={submitting}
-                            >
-                                {submitting ? (
-                                    <ActivityIndicator color="#fff" />
-                                ) : (
-                                    <Text style={styles.submitBtnText}>Submit Request</Text>
-                                )}
-                            </TouchableOpacity>
-                        </ScrollView>
-                    </View>
+                    </KeyboardAvoidingView>
                 </View>
             </Modal>
         </View>
@@ -260,202 +321,116 @@ export default function AccountsScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.dark.background,
-    },
-    center: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    container: { flex: 1 },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     tabContainer: {
         flexDirection: 'row',
-        padding: Spacing.md,
-        backgroundColor: Colors.dark.cardBackground,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.dark.border,
+        padding: 12,
+        gap: 12,
+        borderBottomWidth: 1.5,
     },
     tab: {
         flex: 1,
-        paddingVertical: 10,
+        paddingVertical: 12,
         alignItems: 'center',
-        borderRadius: BorderRadius.md,
-    },
-    activeTab: {
-        backgroundColor: Colors.dark.primary + '20',
-    },
-    tabText: {
-        color: Colors.dark.textSecondary,
-        fontWeight: '600',
-    },
-    activeTabText: {
-        color: Colors.dark.primary,
-    },
-    listContent: {
-        padding: Spacing.md,
-        paddingBottom: 100,
-    },
-    reimbursementCard: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.md,
-        marginBottom: Spacing.md,
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: Colors.dark.border,
+        borderColor: 'transparent',
     },
-    cardHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
+    tabText: { fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+    listContent: { padding: Spacing.md, paddingBottom: 110 },
+    reimbursementCard: {
+        borderRadius: 24,
+        padding: Spacing.lg,
+        marginBottom: Spacing.md,
+        borderWidth: 1.5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 3,
     },
+    cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
     iconBox: {
-        width: 36,
-        height: 36,
-        borderRadius: 8,
-        backgroundColor: Colors.dark.primary + '15',
+        width: 42,
+        height: 42,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
+        marginRight: 14,
+        borderWidth: 1,
     },
-    cardMainInfo: {
-        flex: 1,
-    },
-    cardTitle: {
-        color: Colors.dark.text,
-        fontSize: 16,
-        fontWeight: '700',
-    },
-    cardDate: {
-        color: Colors.dark.textSecondary,
-        fontSize: 12,
-        marginTop: 2,
-    },
-    statusBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
-    },
-    statusPending: { backgroundColor: 'rgba(245, 158, 11, 0.1)' },
-    statusApproved: { backgroundColor: 'rgba(16, 185, 129, 0.1)' },
-    statusRejected: { backgroundColor: 'rgba(239, 68, 68, 0.1)' },
-    statusText: { fontSize: 10, fontWeight: '900' },
-    statusTextPending: { color: Colors.dark.warning },
-    statusTextApproved: { color: Colors.dark.success },
-    statusTextRejected: { color: Colors.dark.error },
+    cardMainInfo: { flex: 1 },
+    cardTitle: { fontSize: 16, fontWeight: '800', letterSpacing: -0.3 },
+    cardDate: { fontSize: 12, fontWeight: '500', marginTop: 3 },
+    statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+    statusText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
     cardFooter: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: Colors.dark.border,
+        paddingTop: 16,
+        borderTopWidth: 1.5,
     },
-    amountText: {
-        color: Colors.dark.text,
-        fontSize: 18,
-        fontWeight: '800',
-    },
-    userLabel: {
-        color: Colors.dark.textSecondary,
-        fontSize: 12,
-    },
+    amountText: { fontSize: 19, fontWeight: '900', letterSpacing: -0.5 },
+    userBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+    userLabel: { fontSize: 11, fontWeight: '600' },
     fab: {
         position: 'absolute',
-        right: 20,
-        bottom: 20,
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: Colors.dark.primary,
+        right: 24,
+        bottom: 24,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         alignItems: 'center',
         justifyContent: 'center',
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        elevation: 8,
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
-        shadowRadius: 4,
+        shadowRadius: 8,
     },
-    emptyContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 60,
-    },
-    emptyText: {
-        color: Colors.dark.textSecondary,
-        marginTop: 16,
-        fontSize: 14,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'flex-end',
-    },
-    modalContent: {
-        backgroundColor: Colors.dark.background,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        padding: Spacing.lg,
-        maxHeight: '80%',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    modalTitle: {
-        color: Colors.dark.text,
-        fontSize: 20,
-        fontWeight: '800',
-    },
-    formContent: {
-        marginBottom: 20,
-    },
-    label: {
-        color: Colors.dark.text,
-        fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 8,
-    },
-    input: {
-        backgroundColor: Colors.dark.inputBackground,
-        borderRadius: BorderRadius.md,
-        padding: 12,
-        color: Colors.dark.text,
-        marginBottom: 20,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
-    },
+    emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, paddingHorizontal: 40 },
+    emptyIconBox: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+    emptyTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8 },
+    emptySubtitle: { fontSize: 14, textAlign: 'center', lineHeight: 22, fontWeight: '500' },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
+    keyboardView: { width: '100%' },
+    modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24, borderTopWidth: 1 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+    closeBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+    modalTitle: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
+    formContent: { marginBottom: 10 },
+    label: { fontSize: 11, fontWeight: '800', marginBottom: 10, marginTop: 12, letterSpacing: 1.5 },
+    input: { borderRadius: 16, padding: 16, fontSize: 15, fontWeight: '500', marginBottom: 16, borderWidth: 1.5 },
     uploadBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: Colors.dark.accent + '30',
-        padding: 16,
-        borderRadius: BorderRadius.md,
-        borderWidth: 1,
-        borderColor: Colors.dark.accent,
+        padding: 18,
+        borderRadius: 16,
+        borderWidth: 1.5,
         borderStyle: 'dashed',
-        marginBottom: 24,
-        gap: 10,
+        marginVertical: 12,
+        gap: 12,
     },
-    uploadBtnText: {
-        color: '#fff',
-        fontWeight: '600',
+    uploadBtnText: { fontSize: 14, fontWeight: '700' },
+    submitBtn: { padding: 18, borderRadius: 18, alignItems: 'center', marginTop: 12, shadowOpacity: 0.2 },
+    disabledBtn: { opacity: 0.5 },
+    submitBtnText: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 1 },
+    statusActions: {
+        flexDirection: 'row',
+        gap: 8,
+        paddingTop: 14,
+        marginTop: 14,
+        borderTopWidth: 1.5,
     },
-    submitBtn: {
-        backgroundColor: Colors.dark.primary,
-        padding: 16,
-        borderRadius: BorderRadius.md,
+    statusBtn: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 12,
         alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
     },
-    disabledBtn: {
-        opacity: 0.5,
-    },
-    submitBtnText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '700',
-    }
+    statusBtnText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
 });

@@ -1,3 +1,4 @@
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -10,6 +11,7 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    useColorScheme
 } from 'react-native';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../constants/Colors';
 
@@ -28,6 +30,8 @@ export default function AddSubcontractorModal({ visible, onClose, onSubmit, init
     const [contactPhone, setContactPhone] = useState(initialData?.contactPhone || '');
     const [agreementDate, setAgreementDate] = useState(initialData?.agreementDate || new Date().toISOString().split('T')[0]);
     const [isLoading, setIsLoading] = useState(false);
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
 
     useEffect(() => {
         if (visible) {
@@ -62,101 +66,131 @@ export default function AddSubcontractorModal({ visible, onClose, onSubmit, init
 
     return (
         <Modal visible={visible} animationType="slide" transparent>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.modalOverlay}
-            >
-                <View style={styles.modalContent}>
-                    <View style={styles.header}>
-                        <Text style={styles.title}>{initialData ? 'Edit Subcontractor' : 'Add Subcontractor'}</Text>
-                        <TouchableOpacity onPress={onClose}>
-                            <Text style={styles.closeButton}>✕</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <ScrollView style={styles.form}>
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Company Name *</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={companyName}
-                                onChangeText={setCompanyName}
-                                placeholder="Enter company name"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Type</Text>
-                            <View style={styles.typeRow}>
-                                {['Manufacturing', 'Design'].map((t) => (
-                                    <TouchableOpacity
-                                        key={t}
-                                        style={[styles.typeButton, type === t && styles.activeTypeButton]}
-                                        onPress={() => setType(t)}
-                                    >
-                                        <Text style={[styles.typeButtonText, type === t && styles.activeTypeButtonText]}>{t}</Text>
-                                    </TouchableOpacity>
-                                ))}
+            <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.keyboardView}
+                >
+                    <View style={[styles.modalContent, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                        <View style={styles.header}>
+                            <View>
+                                <Text style={[styles.title, { color: theme.text }]}>
+                                    {initialData ? 'Edit Partner' : 'New Subcontractor'}
+                                </Text>
+                                <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                                    Manage external service providers
+                                </Text>
                             </View>
+                            <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: theme.cardBackground }]}>
+                                <FontAwesome name="times" size={18} color={theme.textSecondary} />
+                            </TouchableOpacity>
                         </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Contact Person</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={contactPerson}
-                                onChangeText={setContactPerson}
-                                placeholder="Enter name"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
-                        </View>
+                        <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>Company Name *</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+                                    value={companyName}
+                                    onChangeText={setCompanyName}
+                                    placeholder="Enter legal company name"
+                                    placeholderTextColor={theme.textSecondary + '60'}
+                                />
+                            </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Contact Email</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={contactEmail}
-                                onChangeText={setContactEmail}
-                                placeholder="Enter email"
-                                keyboardType="email-address"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
-                        </View>
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>Service Type</Text>
+                                <View style={styles.typeRow}>
+                                    {['Manufacturing', 'Design'].map((t) => (
+                                        <TouchableOpacity
+                                            key={t}
+                                            style={[
+                                                styles.typeButton,
+                                                { backgroundColor: theme.cardBackground, borderColor: theme.border },
+                                                type === t && { backgroundColor: theme.primary, borderColor: theme.primary }
+                                            ]}
+                                            onPress={() => setType(t)}
+                                        >
+                                            <Text style={[
+                                                styles.typeButtonText,
+                                                { color: theme.textSecondary },
+                                                type === t && { color: '#fff', fontWeight: '800' }
+                                            ]}>
+                                                {t}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Contact Phone</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={contactPhone}
-                                onChangeText={setContactPhone}
-                                placeholder="Enter phone"
-                                keyboardType="phone-pad"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
-                        </View>
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>Primary Contact Person</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+                                    value={contactPerson}
+                                    onChangeText={setContactPerson}
+                                    placeholder="Representative Name"
+                                    placeholderTextColor={theme.textSecondary + '60'}
+                                />
+                            </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Agreement Date</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={agreementDate}
-                                onChangeText={setAgreementDate}
-                                placeholder="YYYY-MM-DD"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
-                        </View>
+                            <View style={styles.row}>
+                                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                                    <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
+                                    <TextInput
+                                        style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+                                        value={contactEmail}
+                                        onChangeText={setContactEmail}
+                                        placeholder="business@partner.com"
+                                        keyboardType="email-address"
+                                        placeholderTextColor={theme.textSecondary + '60'}
+                                    />
+                                </View>
+                                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                                    <Text style={[styles.label, { color: theme.textSecondary }]}>Phone</Text>
+                                    <TextInput
+                                        style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+                                        value={contactPhone}
+                                        onChangeText={setContactPhone}
+                                        placeholder="+X-XXX..."
+                                        keyboardType="phone-pad"
+                                        placeholderTextColor={theme.textSecondary + '60'}
+                                    />
+                                </View>
+                            </View>
 
-                        <TouchableOpacity
-                            style={[styles.submitButton, !companyName.trim() && styles.disabledButton]}
-                            onPress={handleSubmit}
-                            disabled={isLoading || !companyName.trim()}
-                        >
-                            {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>{initialData ? 'Update' : 'Add Subcontractor'}</Text>}
-                        </TouchableOpacity>
-                    </ScrollView>
-                </View>
-            </KeyboardAvoidingView>
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>Agreement Effective Date</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+                                    value={agreementDate}
+                                    onChangeText={setAgreementDate}
+                                    placeholder="YYYY-MM-DD"
+                                    placeholderTextColor={theme.textSecondary + '60'}
+                                />
+                            </View>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.submitButton,
+                                    { backgroundColor: theme.primary, shadowColor: theme.primary },
+                                    (!companyName.trim() || isLoading) && styles.disabledButton
+                                ]}
+                                onPress={handleSubmit}
+                                disabled={isLoading || !companyName.trim()}
+                            >
+                                {isLoading ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Text style={styles.submitButtonText}>
+                                        {initialData ? 'Save Changes' : 'Onboard Subcontractor'}
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
+                        </ScrollView>
+                    </View>
+                </KeyboardAvoidingView>
+            </View>
         </Modal>
     );
 }
@@ -164,87 +198,100 @@ export default function AddSubcontractorModal({ visible, onClose, onSubmit, init
 const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.75)',
         justifyContent: 'flex-end',
     },
+    keyboardView: {
+        width: '100%',
+    },
     modalContent: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderTopLeftRadius: BorderRadius.xl,
-        borderTopRightRadius: BorderRadius.xl,
-        padding: Spacing.lg,
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        padding: Spacing.xl,
+        borderWidth: 1,
+        borderBottomWidth: 0,
+        paddingBottom: Platform.OS === 'ios' ? 40 : Spacing.xl,
         maxHeight: '90%',
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: Spacing.lg,
+        alignItems: 'flex-start',
+        marginBottom: Spacing.xl,
     },
     title: {
-        fontSize: FontSizes.xl,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
+        fontSize: 22,
+        fontWeight: '800',
+        letterSpacing: -0.5,
     },
-    closeButton: {
-        fontSize: 24,
-        color: Colors.dark.textSecondary,
+    subtitle: {
+        fontSize: 13,
+        marginTop: 4,
+        fontWeight: '500',
+    },
+    closeBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     form: {
-        marginBottom: Spacing.xl,
+        marginBottom: Spacing.md,
     },
     inputGroup: {
         marginBottom: Spacing.md,
     },
-    label: {
-        fontSize: FontSizes.sm,
-        color: Colors.dark.textSecondary,
+    row: {
+        flexDirection: 'row',
         marginBottom: Spacing.xs,
     },
+    label: {
+        fontSize: 12,
+        marginBottom: 8,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
     input: {
-        backgroundColor: Colors.dark.inputBackground,
-        borderRadius: BorderRadius.md,
+        borderRadius: BorderRadius.lg,
         padding: Spacing.md,
-        color: Colors.dark.text,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
+        borderWidth: 1.5,
+        fontSize: 15,
+        fontWeight: '500',
     },
     typeRow: {
         flexDirection: 'row',
-        gap: Spacing.sm,
+        gap: 12,
     },
     typeButton: {
         flex: 1,
-        padding: Spacing.sm,
-        borderRadius: BorderRadius.md,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
+        paddingVertical: 12,
+        borderRadius: BorderRadius.lg,
+        borderWidth: 1.5,
         alignItems: 'center',
-    },
-    activeTypeButton: {
-        backgroundColor: Colors.dark.primary,
-        borderColor: Colors.dark.primary,
     },
     typeButtonText: {
-        color: Colors.dark.textSecondary,
-        fontSize: FontSizes.sm,
+        fontSize: 14,
         fontWeight: '600',
     },
-    activeTypeButtonText: {
-        color: '#fff',
-    },
     submitButton: {
-        backgroundColor: Colors.dark.primary,
-        borderRadius: BorderRadius.md,
-        padding: Spacing.md,
+        borderRadius: BorderRadius.xl,
+        padding: Spacing.xl,
         alignItems: 'center',
-        marginTop: Spacing.md,
+        marginTop: Spacing.lg,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
     disabledButton: {
         opacity: 0.5,
     },
     submitButtonText: {
         color: '#fff',
-        fontSize: FontSizes.md,
-        fontWeight: 'bold',
+        fontSize: 16,
+        fontWeight: '800',
+        letterSpacing: 0.5,
     },
 });

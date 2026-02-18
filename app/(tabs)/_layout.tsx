@@ -5,7 +5,7 @@ import { DrawerContentComponentProps, DrawerContentScrollView } from '@react-nav
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import React from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAuthStore } from '../../lib/store';
 
 // Custom Drawer Content Component
@@ -44,12 +44,12 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       {/* Header */}
       <View style={[styles.drawerHeader, { borderBottomColor: colors.border }]}>
         <View style={styles.logoContainer}>
-          <View style={[styles.logoBox, { backgroundColor: colors.primary }]}>
-            <FontAwesome name="plane" size={24} color="#fff" />
-          </View>
-          <View>
-            <Text style={[styles.brandName, { color: colors.text }]}>AeroSky</Text>
-            <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>Drone Compliance</Text>
+          <View style={[styles.logoBox, { backgroundColor: 'transparent' }]}>
+            <Image
+              source={require('../../assets/images/icon.png')}
+              style={{ width: 64, height: 64, borderRadius: 16 }}
+              resizeMode="contain"
+            />
           </View>
         </View>
         {user && (
@@ -254,60 +254,76 @@ const styles = StyleSheet.create({
   },
   drawerHeader: {
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
     borderBottomWidth: 1,
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 20,
+    gap: 14,
+    marginBottom: 24,
   },
   logoBox: {
     width: 48,
     height: 48,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   brandName: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   brandSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 2,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   avatarText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '800',
   },
   userDetails: {
     flex: 1,
   },
   userName: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
   },
   userEmail: {
     fontSize: 12,
     marginTop: 2,
+    opacity: 0.8,
   },
   menuContainer: {
-    paddingTop: 10,
+    paddingTop: 16,
     paddingHorizontal: 12,
   },
   menuItem: {
@@ -322,19 +338,19 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     flex: 1,
   },
   activeIndicator: {
     position: 'absolute',
     left: 0,
-    top: 8,
-    bottom: 8,
+    top: 10,
+    bottom: 10,
     width: 4,
     borderRadius: 2,
   },
   drawerFooter: {
-    padding: 20,
+    padding: 24,
     borderTopWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -344,35 +360,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: 'rgba(244, 63, 94, 0.08)',
   },
   logoutText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   version: {
     fontSize: 12,
+    fontWeight: '500',
+    opacity: 0.5,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
-    paddingBottom: 15,
-    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   hamburger: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 19,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   headerRight: {
-    width: 40,
+    width: 44,
   },
 });

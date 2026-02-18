@@ -9,72 +9,112 @@ import {
     Text,
     TouchableOpacity,
     View,
+    Platform,
+    useColorScheme,
 } from 'react-native';
 import AddOrderModal from '../../components/AddOrderModal';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
 import type { Order } from '../../lib/types';
+import { generateOrderPDF } from '../../lib/pdf-generator';
 
 const OrderCard = ({
     order,
     onEdit,
     onDelete,
+    onDownload,
 }: {
     order: Order;
     onEdit: (order: Order) => void;
     onDelete: (id: string) => void;
-}) => (
-    <View style={styles.card}>
-        <View style={styles.cardHeader}>
-            <View style={[styles.statusIcon, { backgroundColor: Colors.dark.primary + '20' }]}>
-                <FontAwesome name="shopping-cart" size={24} color={Colors.dark.primary} />
-            </View>
-            <View style={styles.infoContainer}>
-                <View style={styles.nameRow}>
-                    <Text style={styles.contract}>{order.contractNumber}</Text>
-                    <View style={styles.actionIcons}>
-                        <TouchableOpacity onPress={() => onEdit(order)} style={styles.iconBtn}>
-                            <FontAwesome name="edit" size={16} color={Colors.dark.textSecondary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => onDelete(order.id)} style={styles.iconBtn}>
-                            <FontAwesome name="trash" size={16} color={Colors.dark.error} />
-                        </TouchableOpacity>
+    onDownload: (order: Order) => void;
+}) => {
+    const isDelivered = order.manufacturingStage === 'Delivered';
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
+
+    // Stage based colors (matching web dashboard logic)
+    const getStageColor = (stage: string) => {
+        switch (stage) {
+            case 'Delivered': return theme.success;
+            case 'Testing': return theme.accent;
+            case 'Assembling': return theme.warning;
+            case 'In Design': return theme.primaryLight;
+            default: return theme.textSecondary;
+        }
+    };
+
+    const stageColor = getStageColor(order.manufacturingStage);
+
+    return (
+        <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.border, borderTopColor: stageColor, borderTopWidth: 4 }]}>
+            <View style={styles.cardHeader}>
+                <View style={[styles.statusIcon, { backgroundColor: stageColor + '15' }]}>
+                    <FontAwesome name="shopping-cart" size={24} color={stageColor} />
+                </View>
+                <View style={styles.infoContainer}>
+                    <View style={styles.nameRow}>
+                        <Text style={[styles.contract, { color: theme.text }]}>{order.contractNumber}</Text>
+                        <View style={styles.actionIcons}>
+                            <TouchableOpacity onPress={() => onDownload(order)} style={styles.iconBtn}>
+                                <FontAwesome name="download" size={16} color={theme.primary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => onEdit(order)} style={styles.iconBtn}>
+                                <FontAwesome name="edit" size={16} color={theme.textSecondary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => onDelete(order.id)} style={styles.iconBtn}>
+                                <FontAwesome name="trash" size={16} color={theme.error} />
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                </View>
-                <Text style={styles.client}>{order.clientName}</Text>
-            </View>
-        </View>
-
-        <View style={styles.cardDivider} />
-
-        <View style={styles.detailsGrid}>
-            <View style={styles.detailItem}>
-                <Text style={styles.label}>Model</Text>
-                <Text style={styles.value}>{order.droneModel}</Text>
-            </View>
-            <View style={styles.detailItem}>
-                <Text style={styles.label}>Value</Text>
-                <Text style={styles.value}>{order.currency} {order.contractValue.toLocaleString()}</Text>
-            </View>
-            <View style={styles.detailItem}>
-                <Text style={styles.label}>Date</Text>
-                <Text style={styles.value}>{new Date(order.orderDate).toLocaleDateString()}</Text>
-            </View>
-            <View style={styles.detailItem}>
-                <Text style={styles.label}>Status</Text>
-                <View style={[styles.statusBadge, { backgroundColor: order.manufacturingStage === 'Delivered' ? Colors.dark.success + '30' : Colors.dark.warning + '30' }]}>
-                    <Text style={[styles.statusText, { color: order.manufacturingStage === 'Delivered' ? Colors.dark.success : Colors.dark.warning }]}>{order.manufacturingStage}</Text>
+                    <Text style={[styles.client, { color: theme.textSecondary }]}>{order.clientName}</Text>
                 </View>
             </View>
+
+            <View style={[styles.cardDivider, { backgroundColor: theme.border + '30' }]} />
+
+            <View style={styles.detailsGrid}>
+                <View style={styles.detailItem}>
+                    <Text style={[styles.label, { color: theme.textSecondary }]}>Model</Text>
+                    <Text style={[styles.value, { color: theme.text }]}>{order.droneModel}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                    <Text style={[styles.label, { color: theme.textSecondary }]}>Weight</Text>
+                    <Text style={[styles.value, { color: theme.text }]}>{order.weightClass}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                    <Text style={[styles.label, { color: theme.textSecondary }]}>Value</Text>
+                    <Text style={[styles.value, { color: theme.text }]}>₹{order.contractValue.toLocaleString()}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                    <Text style={[styles.label, { color: theme.textSecondary }]}>Date</Text>
+                    <Text style={[styles.value, { color: theme.text }]}>{new Date(order.orderDate).toLocaleDateString()}</Text>
+                </View>
+            </View>
+
+            <View style={[styles.cardFooter, { borderTopColor: theme.border + '30' }]}>
+                <View style={[styles.statusBadge, { backgroundColor: stageColor + '15' }]}>
+                    <View style={[styles.statusDot, { backgroundColor: stageColor }]} />
+                    <Text style={[styles.statusText, { color: stageColor }]}>
+                        {order.manufacturingStage}
+                    </Text>
+                </View>
+                <View style={styles.docCount}>
+                    <FontAwesome name="paperclip" size={12} color={theme.textSecondary} />
+                    <Text style={[styles.docText, { color: theme.textSecondary }]}>{order.uploads?.length || 0} Docs</Text>
+                </View>
+            </View>
         </View>
-    </View>
-);
+    );
+};
 
 export default function OrdersScreen() {
     const { orders, loading, fetchOrders, addOrder, updateOrder, deleteOrder } = useComplianceStore();
     const [refreshing, setRefreshing] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
 
     useEffect(() => {
         fetchOrders();
@@ -107,6 +147,14 @@ export default function OrdersScreen() {
         ]);
     };
 
+    const handleDownload = async (order: Order) => {
+        try {
+            await generateOrderPDF(order);
+        } catch (error) {
+            Alert.alert('Export Failed', 'Could not generate PDF. Please try again.');
+        }
+    };
+
     const openEditModal = (order: Order) => {
         setEditingOrder(order);
         setIsModalVisible(true);
@@ -114,40 +162,47 @@ export default function OrdersScreen() {
 
     if (loading && orders.length === 0) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={Colors.dark.primary} />
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <FlatList
                 data={orders}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <OrderCard order={item} onEdit={openEditModal} onDelete={handleDelete} />
+                    <OrderCard
+                        order={item}
+                        onEdit={openEditModal}
+                        onDelete={handleDelete}
+                        onDownload={handleDownload}
+                    />
                 )}
                 contentContainerStyle={styles.listContent}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.dark.primary} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
                 }
                 ListHeaderComponent={
                     <View style={styles.listHeader}>
-                        <Text style={styles.headerTitle}>{orders.length} Active Orders</Text>
+                        <Text style={[styles.headerTitle, { color: theme.textSecondary }]}>{orders.length} Active Orders</Text>
                     </View>
                 }
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <FontAwesome name="shopping-cart" size={64} color={Colors.dark.border} />
-                        <Text style={styles.emptyTitle}>No Orders Found</Text>
-                        <Text style={styles.emptySubtitle}>Start by adding your first order</Text>
+                        <View style={[styles.emptyIconContainer, { backgroundColor: theme.cardBackground }]}>
+                            <FontAwesome name="shopping-cart" size={40} color={theme.border} />
+                        </View>
+                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Orders Found</Text>
+                        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>Start by adding your first order</Text>
                     </View>
                 }
             />
 
             <TouchableOpacity
-                style={styles.fab}
+                style={[styles.fab, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
                 onPress={() => {
                     setEditingOrder(null);
                     setIsModalVisible(true);
@@ -167,58 +222,92 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.dark.background },
+    container: { flex: 1 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     listContent: { padding: Spacing.md, paddingBottom: 100 },
-    listHeader: { marginBottom: Spacing.md },
-    headerTitle: { fontSize: FontSizes.md, color: Colors.dark.textSecondary, fontWeight: '600' },
+    listHeader: { marginBottom: Spacing.md, marginTop: Spacing.sm },
+    headerTitle: { fontSize: FontSizes.sm, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
     card: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.md,
+        borderRadius: BorderRadius.xl,
+        padding: Spacing.xl,
         marginBottom: Spacing.md,
         borderWidth: 1,
-        borderColor: Colors.dark.border,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 10,
+            },
+            android: {
+                elevation: 4,
+            },
+        }),
     },
     cardHeader: { flexDirection: 'row', alignItems: 'center' },
     statusIcon: {
-        width: 50,
-        height: 50,
-        borderRadius: 12,
+        width: 54,
+        height: 54,
+        borderRadius: BorderRadius.lg,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: Spacing.md,
     },
     infoContainer: { flex: 1 },
     nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    contract: { fontSize: FontSizes.lg, fontWeight: '700', color: Colors.dark.text },
-    actionIcons: { flexDirection: 'row', gap: Spacing.sm },
+    contract: { fontSize: FontSizes.lg, fontWeight: '800', letterSpacing: -0.5 },
+    actionIcons: { flexDirection: 'row', gap: Spacing.md },
     iconBtn: { padding: 4 },
-    client: { fontSize: FontSizes.sm, color: Colors.dark.textSecondary, marginTop: 2 },
-    cardDivider: { height: 1, backgroundColor: Colors.dark.border, marginVertical: Spacing.md },
-    detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
-    detailItem: { width: '47%' },
-    label: { fontSize: FontSizes.xs, color: Colors.dark.textSecondary, marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
-    value: { fontSize: FontSizes.sm, color: Colors.dark.text, fontWeight: '600' },
-    statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, alignSelf: 'flex-start' },
-    statusText: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
-    emptyState: { alignItems: 'center', justifyContent: 'center', marginTop: 100, paddingHorizontal: 40 },
-    emptyTitle: { fontSize: FontSizes.xl, color: Colors.dark.text, fontWeight: 'bold', marginTop: 16 },
-    emptySubtitle: { fontSize: FontSizes.md, color: Colors.dark.textSecondary, textAlign: 'center', marginTop: 8 },
-    fab: {
-        position: 'absolute',
-        right: Spacing.lg,
-        bottom: Spacing.lg,
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: Colors.dark.primary,
+    client: { fontSize: FontSizes.md, marginTop: 1, fontWeight: '500' },
+    cardDivider: { height: 1, marginVertical: Spacing.xl },
+    detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.lg },
+    detailItem: { width: '45%' },
+    label: { fontSize: FontSizes.xs, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: '700' },
+    value: { fontSize: FontSizes.md, fontWeight: '600' },
+    cardFooter: {
+        marginTop: Spacing.xl,
+        paddingTop: Spacing.md,
+        borderTopWidth: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    },
+    statusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: BorderRadius.full,
+    },
+    statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+    statusText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+    docCount: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    docText: { fontSize: 11, fontWeight: '600' },
+    emptyState: { alignItems: 'center', justifyContent: 'center', marginTop: 80, paddingHorizontal: 40 },
+    emptyIconContainer: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
         alignItems: 'center',
         justifyContent: 'center',
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.05)'
+    },
+    emptyTitle: { fontSize: FontSizes.xl, fontWeight: '800', marginTop: 10 },
+    emptySubtitle: { fontSize: FontSizes.md, textAlign: 'center', marginTop: 6, opacity: 0.8 },
+    fab: {
+        position: 'absolute',
+        right: Spacing.xl,
+        bottom: Spacing.xl,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 8,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
     },
 });

@@ -1,17 +1,20 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     FlatList,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    useColorScheme
 } from 'react-native';
 import Colors, { BorderRadius, Spacing } from '../../constants/Colors';
 import { apiClient } from '../../lib/api';
@@ -50,6 +53,8 @@ const statusColors: Record<string, string> = {
 export default function SupportChatScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
     const { user } = useAuthStore();
     const flatListRef = useRef<FlatList>(null);
 
@@ -67,7 +72,7 @@ export default function SupportChatScreen() {
             setTicket(response.data);
         } catch (error) {
             console.error('Failed to fetch ticket:', error);
-            Alert.alert('Error', 'Failed to load ticket');
+            Alert.alert('System Error', 'Unable to retrieve transmission logs.');
             router.back();
         } finally {
             setIsLoading(false);
@@ -89,9 +94,9 @@ export default function SupportChatScreen() {
                 message: newMessage.trim()
             });
             setNewMessage('');
-            fetchTicket(); // Refresh to get new message
+            fetchTicket();
         } catch (error: any) {
-            Alert.alert('Error', error.response?.data?.error || 'Failed to send message');
+            Alert.alert('Transmission Failed', error.response?.data?.error || 'Unable to dispatch message.');
         } finally {
             setIsSending(false);
         }
@@ -102,9 +107,9 @@ export default function SupportChatScreen() {
             await apiClient.put(`/api/mobile/support/${id}`, { status: newStatus });
             setStatusModalVisible(false);
             fetchTicket();
-            Alert.alert('Success', `Ticket status updated to ${newStatus}`);
+            Alert.alert('Protocol Updated', `Ticket status transitioned to ${newStatus}`);
         } catch (error: any) {
-            Alert.alert('Error', error.response?.data?.error || 'Failed to update status');
+            Alert.alert('Update Failed', error.response?.data?.error || 'Unable to update ticket state.');
         }
     };
 
@@ -117,9 +122,9 @@ export default function SupportChatScreen() {
         const date = new Date(dateString);
         const today = new Date();
         if (date.toDateString() === today.toDateString()) {
-            return 'Today';
+            return 'TODAY';
         }
-        return date.toLocaleDateString();
+        return date.toLocaleDateString().toUpperCase();
     };
 
     const renderMessage = ({ item, index }: { item: Message; index: number }) => {
@@ -157,16 +162,16 @@ export default function SupportChatScreen() {
 
     if (isLoading) {
         return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color={Colors.dark.primary} />
+            <View style={[styles.centered, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     if (!ticket) {
         return (
-            <View style={styles.centered}>
-                <Text style={styles.errorText}>Ticket not found</Text>
+            <View style={[styles.centered, { backgroundColor: theme.background }]}>
+                <Text style={[styles.errorText, { color: theme.textSecondary }]}>Communications log not found.</Text>
             </View>
         );
     }
@@ -310,225 +315,44 @@ export default function SupportChatScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.dark.background,
-    },
-    centered: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: Colors.dark.background,
-    },
-    errorText: {
-        color: Colors.dark.textSecondary,
-        fontSize: 16,
-    },
-    ticketHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: Spacing.md,
-        backgroundColor: Colors.dark.cardBackground,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.dark.border,
-    },
-    ticketInfo: {
-        flex: 1,
-        marginRight: Spacing.md,
-    },
-    ticketSubject: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: Colors.dark.text,
-        marginBottom: 4,
-    },
-    ticketMeta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    statusBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 4,
-    },
-    statusText: {
-        fontSize: 10,
-        fontWeight: '700',
-    },
-    orgText: {
-        fontSize: 12,
-        color: Colors.dark.textSecondary,
-    },
-    resolveButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: Colors.dark.success,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: BorderRadius.md,
-        gap: 6,
-    },
-    resolveButtonText: {
-        color: '#fff',
-        fontWeight: '600',
-        fontSize: 12,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: Spacing.xl,
-    },
-    statusModalContent: {
-        width: '100%',
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.xl,
-        padding: Spacing.lg,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
-        marginBottom: Spacing.md,
-    },
-    statusOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 14,
-        paddingHorizontal: Spacing.md,
-        borderRadius: BorderRadius.md,
-        gap: 12,
-    },
-    statusOptionActive: {
-        backgroundColor: Colors.dark.primary + '10',
-    },
-    statusDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-    },
-    statusOptionText: {
-        flex: 1,
-        fontSize: 15,
-        color: Colors.dark.text,
-    },
-    statusOptionTextActive: {
-        color: Colors.dark.primary,
-        fontWeight: '600',
-    },
-    messageList: {
-        padding: Spacing.md,
-        flexGrow: 1,
-    },
-    dateHeader: {
-        alignItems: 'center',
-        marginVertical: Spacing.md,
-    },
-    dateHeaderText: {
-        fontSize: 12,
-        color: Colors.dark.textSecondary,
-        backgroundColor: Colors.dark.inputBackground,
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    messageBubble: {
-        maxWidth: '80%',
-        padding: Spacing.md,
-        borderRadius: BorderRadius.lg,
-        marginBottom: Spacing.sm,
-    },
-    myMessage: {
-        alignSelf: 'flex-end',
-        backgroundColor: Colors.dark.primary,
-        borderBottomRightRadius: 4,
-    },
-    theirMessage: {
-        alignSelf: 'flex-start',
-        backgroundColor: Colors.dark.cardBackground,
-        borderBottomLeftRadius: 4,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
-    },
-    messageText: {
-        fontSize: 15,
-        lineHeight: 20,
-    },
-    myMessageText: {
-        color: '#fff',
-    },
-    theirMessageText: {
-        color: Colors.dark.text,
-    },
-    messageTime: {
-        fontSize: 10,
-        marginTop: 4,
-        alignSelf: 'flex-end',
-    },
-    myMessageTime: {
-        color: 'rgba(255,255,255,0.7)',
-    },
-    theirMessageTime: {
-        color: Colors.dark.textSecondary,
-    },
-    emptyMessages: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 60,
-    },
-    emptyText: {
-        color: Colors.dark.textSecondary,
-        marginTop: 12,
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        padding: Spacing.md,
-        backgroundColor: Colors.dark.cardBackground,
-        borderTopWidth: 1,
-        borderTopColor: Colors.dark.border,
-        alignItems: 'flex-end',
-        gap: 10,
-    },
-    input: {
-        flex: 1,
-        backgroundColor: Colors.dark.inputBackground,
-        borderRadius: BorderRadius.lg,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: 12,
-        color: Colors.dark.text,
-        maxHeight: 100,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
-    },
-    sendButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: Colors.dark.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    sendButtonDisabled: {
-        backgroundColor: Colors.dark.border,
-    },
-    closedBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: Spacing.md,
-        backgroundColor: Colors.dark.cardBackground,
-        borderTopWidth: 1,
-        borderTopColor: Colors.dark.border,
-        gap: 8,
-    },
-    closedText: {
-        color: Colors.dark.textSecondary,
-        fontSize: 14,
-    },
+    container: { flex: 1 },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    errorText: { fontSize: 16, fontWeight: '600' },
+    ticketHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1.5 },
+    ticketInfo: { flex: 1, marginRight: 16 },
+    ticketSubject: { fontSize: 18, fontWeight: '900', letterSpacing: -0.3 },
+    ticketMeta: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
+    statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+    statusText: { fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+    orgText: { fontSize: 12, fontWeight: '600' },
+    resolveButton: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' },
+    statusModalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: Platform.OS === 'ios' ? 44 : 24, borderTopWidth: 1.5 },
+    modalTitle: { fontSize: 24, fontWeight: '900', marginBottom: 20, letterSpacing: -0.5 },
+    statusOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 16, borderRadius: 18, gap: 14, marginBottom: 10 },
+    statusDot: { width: 12, height: 12, borderRadius: 6 },
+    statusOptionText: { flex: 1, fontSize: 16, fontWeight: '600' },
+    statusOptionTextActive: { fontWeight: '800' },
+    messageList: { padding: 16, flexGrow: 1, paddingBottom: 30 },
+    dateHeader: { alignItems: 'center', marginVertical: 20 },
+    dateHeaderText: { fontSize: 11, fontWeight: '900', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12, letterSpacing: 1.5 },
+    messageBubble: { maxWidth: '85%', padding: 14, borderRadius: 20, marginBottom: 12 },
+    myMessage: { alignSelf: 'flex-end', borderBottomRightRadius: 4 },
+    theirMessage: { alignSelf: 'flex-start', borderBottomLeftRadius: 4, borderWidth: 1.5 },
+    messageText: { fontSize: 15, lineHeight: 22, fontWeight: '500' },
+    myMessageText: { color: '#fff' },
+    messageTime: { fontSize: 10, marginTop: 6, alignSelf: 'flex-end', fontWeight: '600' },
+    myMessageTime: { color: 'rgba(255,255,255,0.8)' },
+    emptyMessages: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 100 },
+    emptyText: { fontSize: 15, fontWeight: '600', marginTop: 16 },
+    inputContainer: { flexDirection: 'row', padding: 16, borderTopWidth: 1.5, alignItems: 'flex-end', gap: 12, paddingBottom: Platform.OS === 'ios' ? 34 : 20 },
+    input: { flex: 1, borderRadius: 20, paddingHorizontal: 18, paddingVertical: 14, fontSize: 15, fontWeight: '500', maxHeight: 120, borderWidth: 1.5 },
+    sendButton: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', elevation: 4 },
+    closedBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 20, borderTopWidth: 1.5, gap: 10 },
+    closedText: { fontSize: 14, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
+    theirMessageText: { color: Colors.dark.text },
+    theirMessageTime: { color: Colors.dark.textSecondary },
+    resolveButtonText: { color: '#fff', fontWeight: 'bold' },
+    sendButtonDisabled: { opacity: 0.5 },
+    statusOptionActive: { backgroundColor: Colors.dark.primaryLight + '20' },
 });

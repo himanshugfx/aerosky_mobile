@@ -1,6 +1,6 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { apiClient } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
@@ -262,40 +262,46 @@ export default function OrganizationsScreen() {
         }
     };
 
-    const renderItem = ({ item }: { item: Organization }) => (
-        <View style={styles.orgCard}>
-            <View style={styles.orgInfo}>
-                <View style={styles.orgIconBox}>
-                    <FontAwesome name="building" size={20} color={Colors.dark.primary} />
+    const renderItem = ({ item }: { item: Organization }) => {
+        const theme = Colors[useColorScheme() ?? 'dark'];
+        return (
+            <View style={[styles.orgCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                <View style={styles.orgInfo}>
+                    <View style={[styles.orgIconBox, { backgroundColor: theme.primary + '15' }]}>
+                        <FontAwesome name="building" size={20} color={theme.primary} />
+                    </View>
+                    <View style={styles.orgTextContainer}>
+                        <Text style={[styles.orgName, { color: theme.text }]}>{item.name}</Text>
+                        <Text style={[styles.orgDetails, { color: theme.textSecondary }]}>{item.email || 'No email'} • {item.phone || 'No phone'}</Text>
+                    </View>
                 </View>
-                <View style={styles.orgTextContainer}>
-                    <Text style={styles.orgName}>{item.name}</Text>
-                    <Text style={styles.orgDetails}>{item.email || 'No email'} • {item.phone || 'No phone'}</Text>
-                </View>
+                <TouchableOpacity
+                    style={[styles.manageButton, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}
+                    onPress={() => handleManagePress(item)}
+                >
+                    <Text style={[styles.manageButtonText, { color: theme.text }]}>Manage</Text>
+                </TouchableOpacity>
             </View>
-            <TouchableOpacity
-                style={styles.manageButton}
-                onPress={() => handleManagePress(item)}
-            >
-                <Text style={styles.manageButtonText}>Manage</Text>
-            </TouchableOpacity>
-        </View>
-    );
+        );
+    };
+
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
 
     if (isLoading) {
         return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color={Colors.dark.primary} />
+            <View style={[styles.centered, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <View style={styles.header}>
-                <Text style={styles.title}>All Organizations</Text>
+                <Text style={[styles.title, { color: theme.text }]}>All Organizations</Text>
                 <TouchableOpacity
-                    style={styles.addButton}
+                    style={[styles.addButton, { backgroundColor: theme.primary }]}
                     onPress={() => setModalVisible(true)}
                 >
                     <FontAwesome name="plus" size={14} color="#fff" />
@@ -309,12 +315,14 @@ export default function OrganizationsScreen() {
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContent}
                 refreshControl={
-                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={Colors.dark.primary} />
+                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.primary} />
                 }
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <FontAwesome name="building-o" size={48} color={Colors.dark.border} />
-                        <Text style={styles.emptyText}>No organizations found</Text>
+                        <View style={[styles.emptyIconBox, { backgroundColor: theme.cardBackground }]}>
+                            <FontAwesome name="building-o" size={40} color={theme.border} />
+                        </View>
+                        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No organizations found</Text>
                     </View>
                 }
             />
@@ -326,66 +334,68 @@ export default function OrganizationsScreen() {
                 transparent={true}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Add Organization</Text>
-                        <Text style={styles.modalSubtitle}>Admin credentials will be auto-created</Text>
+                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                        <View style={styles.modalHeader}>
+                            <View>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>Add Organization</Text>
+                                <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>Admin credentials will be auto-created</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.closeBtn, { backgroundColor: theme.cardBackground }]}>
+                                <FontAwesome name="times" size={18} color={theme.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Organization Name *</Text>
+                            <Text style={[styles.label, { color: theme.textSecondary }]}>Organization Name *</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
                                 value={name}
                                 onChangeText={setName}
                                 placeholder="e.g. AeroSky India"
-                                placeholderTextColor={Colors.dark.textSecondary}
+                                placeholderTextColor={theme.textSecondary + '60'}
                             />
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Business Email * (Admin Login)</Text>
+                            <Text style={[styles.label, { color: theme.textSecondary }]}>Business Email * (Admin Login)</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
                                 value={email}
                                 onChangeText={setEmail}
                                 placeholder="contact@company.com"
-                                placeholderTextColor={Colors.dark.textSecondary}
+                                placeholderTextColor={theme.textSecondary + '60'}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                             />
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Phone Number * (Admin Password)</Text>
+                            <Text style={[styles.label, { color: theme.textSecondary }]}>Phone Number * (Admin Password)</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
                                 value={phone}
                                 onChangeText={setPhone}
                                 placeholder="9876543210"
-                                placeholderTextColor={Colors.dark.textSecondary}
+                                placeholderTextColor={theme.textSecondary + '60'}
                                 keyboardType="phone-pad"
                             />
                         </View>
 
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => setModalVisible(false)}
-                            >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.submitButton]}
-                                onPress={handleCreateOrg}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                    <Text style={styles.submitButtonText}>Create</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity
+                            style={[styles.submitButton, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
+                            onPress={handleCreateOrg}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Text style={styles.submitButtonText}>Create Organization</Text>
+                            )}
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+                            <Text style={[styles.cancelBtnText, { color: theme.textSecondary }]}>Discard Changes</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
@@ -398,43 +408,54 @@ export default function OrganizationsScreen() {
                 onRequestClose={() => setManageModalVisible(false)}
             >
                 <TouchableOpacity
-                    style={styles.modalOverlay}
+                    style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
                     activeOpacity={1}
                     onPress={() => setManageModalVisible(false)}
                 >
-                    <View style={styles.manageModalContent}>
-                        <Text style={styles.manageModalTitle}>{selectedOrg?.name}</Text>
-                        <Text style={styles.manageModalSubtitle}>What would you like to do?</Text>
+                    <View style={[styles.manageModalContent, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                        <View style={styles.manageHeader}>
+                            <Text style={[styles.manageModalTitle, { color: theme.text }]}>{selectedOrg?.name}</Text>
+                            <Text style={[styles.manageModalSubtitle, { color: theme.textSecondary }]}>What would you like to do?</Text>
+                        </View>
 
                         <TouchableOpacity
-                            style={styles.manageOption}
+                            style={[styles.manageOption, { borderBottomColor: theme.border }]}
                             onPress={handleEditPress}
                         >
-                            <FontAwesome name="pencil" size={18} color={Colors.dark.primary} />
-                            <Text style={styles.manageOptionText}>Edit Organization</Text>
+                            <View style={[styles.optIconBox, { backgroundColor: theme.primary + '10' }]}>
+                                <FontAwesome name="pencil" size={16} color={theme.primary} />
+                            </View>
+                            <Text style={[styles.manageOptionText, { color: theme.text }]}>Edit Organization</Text>
+                            <FontAwesome name="chevron-right" size={12} color={theme.textSecondary} />
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={styles.manageOption}
+                            style={[styles.manageOption, { borderBottomColor: theme.border }]}
                             onPress={handleChangePasswordPress}
                         >
-                            <FontAwesome name="lock" size={18} color={Colors.dark.primary} />
-                            <Text style={styles.manageOptionText}>Change Password</Text>
+                            <View style={[styles.optIconBox, { backgroundColor: theme.accent + '10' }]}>
+                                <FontAwesome name="lock" size={16} color={theme.accent} />
+                            </View>
+                            <Text style={[styles.manageOptionText, { color: theme.text }]}>Change Password</Text>
+                            <FontAwesome name="chevron-right" size={12} color={theme.textSecondary} />
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             style={[styles.manageOption, styles.deleteOption]}
                             onPress={handleDeletePress}
                         >
-                            <FontAwesome name="trash" size={18} color="#EF4444" />
+                            <View style={[styles.optIconBox, { backgroundColor: theme.error + '10' }]}>
+                                <FontAwesome name="trash" size={16} color={theme.error} />
+                            </View>
                             <Text style={[styles.manageOptionText, styles.deleteText]}>Delete Organization</Text>
+                            <FontAwesome name="chevron-right" size={12} color={theme.error} />
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             style={styles.manageCloseButton}
                             onPress={() => setManageModalVisible(false)}
                         >
-                            <Text style={styles.manageCloseText}>Cancel</Text>
+                            <Text style={[styles.manageCloseText, { color: theme.textSecondary }]}>Close Menu</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
@@ -447,55 +468,56 @@ export default function OrganizationsScreen() {
                 transparent={true}
                 onRequestClose={() => setEditModalVisible(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Edit Organization</Text>
-                        <Text style={styles.modalSubtitle}>To change password, use the Change Password option</Text>
+                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                        <View style={styles.modalHeader}>
+                            <View>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>Edit Organization</Text>
+                                <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>To change password, use the specified option</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setEditModalVisible(false)} style={[styles.closeBtn, { backgroundColor: theme.cardBackground }]}>
+                                <FontAwesome name="times" size={18} color={theme.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Organization Name *</Text>
+                            <Text style={[styles.label, { color: theme.textSecondary }]}>Organization Name *</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
                                 value={editName}
                                 onChangeText={setEditName}
                                 placeholder="e.g. AeroSky India"
-                                placeholderTextColor={Colors.dark.textSecondary}
+                                placeholderTextColor={theme.textSecondary + '60'}
                             />
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Business Email (Admin Login)</Text>
+                            <Text style={[styles.label, { color: theme.textSecondary }]}>Business Email (Admin Login)</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
                                 value={editEmail}
                                 onChangeText={setEditEmail}
                                 placeholder="contact@company.com"
-                                placeholderTextColor={Colors.dark.textSecondary}
+                                placeholderTextColor={theme.textSecondary + '60'}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                             />
                         </View>
 
-
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => setEditModalVisible(false)}
-                            >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.submitButton]}
-                                onPress={handleUpdateOrg}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                    <Text style={styles.submitButtonText}>Update</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity
+                            style={[styles.submitButton, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
+                            onPress={handleUpdateOrg}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Text style={styles.submitButtonText}>Update Organization</Text>
+                            )}
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditModalVisible(false)}>
+                            <Text style={[styles.cancelBtnText, { color: theme.textSecondary }]}>Discard Changes</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
@@ -507,12 +529,19 @@ export default function OrganizationsScreen() {
                 transparent={true}
                 onRequestClose={() => setChangePasswordModalVisible(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Change Password</Text>
-                        <Text style={styles.modalSubtitle}>
-                            {selectedOrg?.name} • OTP will be sent to {selectedOrg?.email || 'N/A'}
-                        </Text>
+                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                        <View style={styles.modalHeader}>
+                            <View>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>Change Password</Text>
+                                <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
+                                    OTP will be sent to {selectedOrg?.email || 'N/A'}
+                                </Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setChangePasswordModalVisible(false)} style={[styles.closeBtn, { backgroundColor: theme.cardBackground }]}>
+                                <FontAwesome name="times" size={18} color={theme.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
 
                         {/* Step Indicator */}
                         <View style={styles.stepIndicator}>
@@ -520,16 +549,17 @@ export default function OrganizationsScreen() {
                                 <View key={step} style={styles.stepRow}>
                                     <View style={[
                                         styles.stepDot,
-                                        cpStep >= step && styles.stepDotActive,
+                                        { backgroundColor: theme.cardBackground, borderColor: theme.border },
+                                        cpStep >= step && { backgroundColor: theme.primary, borderColor: theme.primary },
                                     ]}>
-                                        <Text style={[styles.stepDotText, cpStep >= step && styles.stepDotTextActive]}>
+                                        <Text style={[styles.stepDotText, { color: theme.textSecondary }, cpStep >= step && { color: '#fff' }]}>
                                             {cpStep > step ? '✓' : step}
                                         </Text>
                                     </View>
-                                    <Text style={[styles.stepLabel, cpStep >= step && styles.stepLabelActive]}>
-                                        {step === 1 ? 'Send OTP' : step === 2 ? 'Verify' : 'New Password'}
+                                    <Text style={[styles.stepLabel, { color: theme.textSecondary }, cpStep >= step && { color: theme.text, fontWeight: '700' }]}>
+                                        {step === 1 ? 'OTP' : step === 2 ? 'Verify' : 'New'}
                                     </Text>
-                                    {step < 3 && <View style={[styles.stepLine, cpStep > step && styles.stepLineActive]} />}
+                                    {step < 3 && <View style={[styles.stepLine, { backgroundColor: theme.border }, cpStep > step && { backgroundColor: theme.primary }]} />}
                                 </View>
                             ))}
                         </View>
@@ -537,18 +567,18 @@ export default function OrganizationsScreen() {
                         {/* Step 1: Send OTP */}
                         {cpStep === 1 && (
                             <View>
-                                <Text style={styles.cpInfoText}>
+                                <Text style={[styles.cpInfoText, { color: theme.textSecondary }]}>
                                     A 6-digit verification code will be sent to the organization's registered email address.
                                 </Text>
                                 <TouchableOpacity
-                                    style={[styles.modalButton, styles.submitButton, { marginTop: 16 }]}
+                                    style={[styles.submitButton, { backgroundColor: theme.primary, shadowColor: theme.primary, marginTop: 16 }]}
                                     onPress={handleSendOtp}
                                     disabled={cpLoading}
                                 >
                                     {cpLoading ? (
                                         <ActivityIndicator size="small" color="#fff" />
                                     ) : (
-                                        <Text style={styles.submitButtonText}>Send OTP</Text>
+                                        <Text style={styles.submitButtonText}>Send Verification Code</Text>
                                     )}
                                 </TouchableOpacity>
                             </View>
@@ -558,19 +588,19 @@ export default function OrganizationsScreen() {
                         {cpStep === 2 && (
                             <View>
                                 <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>Enter 6-digit OTP</Text>
+                                    <Text style={[styles.label, { color: theme.textSecondary }]}>Enter 6-digit OTP</Text>
                                     <TextInput
-                                        style={[styles.input, styles.otpInput]}
+                                        style={[styles.input, styles.otpInput, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.primary }]}
                                         value={cpOtp}
                                         onChangeText={setCpOtp}
                                         placeholder="000000"
-                                        placeholderTextColor={Colors.dark.textSecondary}
+                                        placeholderTextColor={theme.textSecondary + '60'}
                                         keyboardType="number-pad"
                                         maxLength={6}
                                     />
                                 </View>
                                 <TouchableOpacity
-                                    style={[styles.modalButton, styles.submitButton]}
+                                    style={[styles.submitButton, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
                                     onPress={handleVerifyOtp}
                                     disabled={cpLoading}
                                 >
@@ -580,8 +610,8 @@ export default function OrganizationsScreen() {
                                         <Text style={styles.submitButtonText}>Verify OTP</Text>
                                     )}
                                 </TouchableOpacity>
-                                <TouchableOpacity onPress={handleSendOtp} style={{ marginTop: 12, alignItems: 'center' }}>
-                                    <Text style={{ color: Colors.dark.primary, fontSize: 13 }}>Resend OTP</Text>
+                                <TouchableOpacity onPress={handleSendOtp} style={{ marginTop: 20, alignItems: 'center' }}>
+                                    <Text style={{ color: theme.primary, fontSize: 13, fontWeight: '700' }}>Resend Code</Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -590,29 +620,29 @@ export default function OrganizationsScreen() {
                         {cpStep === 3 && (
                             <View>
                                 <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>New Password</Text>
+                                    <Text style={[styles.label, { color: theme.textSecondary }]}>New Password</Text>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
                                         value={cpNewPassword}
                                         onChangeText={setCpNewPassword}
-                                        placeholder="Enter new password"
-                                        placeholderTextColor={Colors.dark.textSecondary}
+                                        placeholder="Min 4 characters"
+                                        placeholderTextColor={theme.textSecondary + '60'}
                                         secureTextEntry
                                     />
                                 </View>
                                 <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>Confirm Password</Text>
+                                    <Text style={[styles.label, { color: theme.textSecondary }]}>Confirm Password</Text>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
                                         value={cpConfirmPassword}
                                         onChangeText={setCpConfirmPassword}
-                                        placeholder="Confirm new password"
-                                        placeholderTextColor={Colors.dark.textSecondary}
+                                        placeholder="Re-enter password"
+                                        placeholderTextColor={theme.textSecondary + '60'}
                                         secureTextEntry
                                     />
                                 </View>
                                 <TouchableOpacity
-                                    style={[styles.modalButton, styles.submitButton]}
+                                    style={[styles.submitButton, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
                                     onPress={handleResetPassword}
                                     disabled={cpLoading}
                                 >
@@ -624,13 +654,7 @@ export default function OrganizationsScreen() {
                                 </TouchableOpacity>
                             </View>
                         )}
-
-                        <TouchableOpacity
-                            style={[styles.modalButton, styles.cancelButton, { marginTop: 12 }]}
-                            onPress={() => setChangePasswordModalVisible(false)}
-                        >
-                            <Text style={styles.cancelButtonText}>Cancel</Text>
-                        </TouchableOpacity>
+                        <View style={{ height: 20 }} />
                     </View>
                 </View>
             </Modal>
@@ -641,13 +665,11 @@ export default function OrganizationsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.dark.background,
     },
     centered: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: Colors.dark.background,
     },
     header: {
         flexDirection: 'row',
@@ -655,39 +677,47 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: Spacing.lg,
         paddingBottom: Spacing.sm,
+        marginTop: Spacing.sm,
     },
     title: {
-        fontSize: FontSizes.xl,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
+        fontSize: 24,
+        fontWeight: '800',
+        letterSpacing: -0.5,
     },
     addButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.dark.primary,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: BorderRadius.md,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: BorderRadius.lg,
         gap: 8,
+        elevation: 4,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
     },
     addButtonText: {
         color: '#fff',
-        fontWeight: '600',
+        fontWeight: '700',
         fontSize: 14,
     },
     listContent: {
         padding: Spacing.lg,
+        paddingBottom: 40,
     },
     orgCard: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.md,
+        borderRadius: 20,
+        padding: Spacing.lg,
         marginBottom: Spacing.md,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
+        borderWidth: 1.5,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
     },
     orgInfo: {
         flexDirection: 'row',
@@ -695,171 +725,195 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     orgIconBox: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        backgroundColor: Colors.dark.primary + '15',
+        width: 48,
+        height: 48,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
+        marginRight: 14,
     },
     orgTextContainer: {
         flex: 1,
     },
     orgName: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
+        fontSize: 17,
+        fontWeight: '700',
+        letterSpacing: -0.2,
     },
     orgDetails: {
         fontSize: 12,
-        color: Colors.dark.textSecondary,
-        marginTop: 2,
+        marginTop: 4,
+        fontWeight: '500',
     },
     manageButton: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 6,
-        backgroundColor: Colors.dark.inputBackground,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 10,
+        borderWidth: 1,
     },
     manageButtonText: {
         fontSize: 12,
-        fontWeight: '600',
-        color: Colors.dark.text,
+        fontWeight: '700',
     },
     emptyState: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 60,
+        paddingVertical: 80,
+    },
+    emptyIconBox: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+        borderWidth: 1.5,
+        borderColor: 'rgba(255,255,255,0.05)',
     },
     emptyText: {
-        color: Colors.dark.textSecondary,
-        fontSize: 16,
-        marginTop: 16,
+        fontSize: 15,
+        fontWeight: '600',
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.7)',
         justifyContent: 'center',
-        padding: Spacing.xl,
+        padding: Spacing.lg,
     },
     modalContent: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.xl,
+        borderRadius: 24,
         padding: Spacing.xl,
         borderWidth: 1,
-        borderColor: Colors.dark.border,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: Spacing.xl,
     },
     modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
-        marginBottom: 4,
+        fontSize: 22,
+        fontWeight: '800',
+        letterSpacing: -0.5,
     },
     modalSubtitle: {
-        fontSize: 12,
-        color: Colors.dark.textSecondary,
-        marginBottom: Spacing.xl,
+        fontSize: 13,
+        marginTop: 4,
+        fontWeight: '500',
+    },
+    closeBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     inputGroup: {
         marginBottom: Spacing.lg,
     },
     label: {
-        fontSize: 14,
-        color: Colors.dark.textSecondary,
+        fontSize: 12,
         marginBottom: 8,
-        fontWeight: '500',
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     input: {
-        backgroundColor: Colors.dark.inputBackground,
-        borderRadius: BorderRadius.md,
+        borderRadius: BorderRadius.lg,
         padding: Spacing.md,
-        color: Colors.dark.text,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
-    },
-    modalButtons: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: 12,
-        marginTop: Spacing.lg,
-    },
-    modalButton: {
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: BorderRadius.md,
-        minWidth: 100,
-        alignItems: 'center',
-    },
-    cancelButton: {
-        backgroundColor: 'transparent',
-    },
-    cancelButtonText: {
-        color: Colors.dark.textSecondary,
-        fontWeight: '600',
+        borderWidth: 1.5,
+        fontSize: 15,
+        fontWeight: '500',
     },
     submitButton: {
-        backgroundColor: Colors.dark.primary,
+        borderRadius: BorderRadius.xl,
+        padding: Spacing.xl,
+        alignItems: 'center',
+        marginTop: Spacing.sm,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
     submitButtonText: {
         color: '#fff',
-        fontWeight: '600',
+        fontSize: 16,
+        fontWeight: '800',
+        letterSpacing: 0.5,
     },
-    // Manage Modal Styles
-    manageModalContent: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.xl,
+    cancelBtn: {
         padding: Spacing.lg,
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    cancelBtnText: {
+        fontWeight: '700',
+        fontSize: 14,
+    },
+    manageModalContent: {
+        borderRadius: 28,
+        padding: Spacing.xl,
         borderWidth: 1,
-        borderColor: Colors.dark.border,
+        width: '90%',
+        alignSelf: 'center',
+    },
+    manageHeader: {
+        marginBottom: Spacing.xl,
+        alignItems: 'center',
     },
     manageModalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
+        fontSize: 20,
+        fontWeight: '800',
         textAlign: 'center',
     },
     manageModalSubtitle: {
         fontSize: 14,
-        color: Colors.dark.textSecondary,
+        marginTop: 6,
         textAlign: 'center',
-        marginBottom: Spacing.lg,
     },
     manageOption: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: Spacing.md,
-        backgroundColor: Colors.dark.inputBackground,
-        borderRadius: BorderRadius.md,
-        marginBottom: Spacing.sm,
-        gap: 12,
+        paddingVertical: 18,
+        borderBottomWidth: 1,
+        gap: 16,
+    },
+    optIconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     manageOptionText: {
+        flex: 1,
         fontSize: 16,
-        color: Colors.dark.text,
-        fontWeight: '500',
+        fontWeight: '600',
     },
     deleteOption: {
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderBottomWidth: 0,
     },
     deleteText: {
         color: '#EF4444',
     },
     manageCloseButton: {
-        padding: Spacing.md,
+        marginTop: Spacing.lg,
+        paddingVertical: 16,
         alignItems: 'center',
-        marginTop: Spacing.sm,
     },
     manageCloseText: {
-        fontSize: 16,
-        color: Colors.dark.textSecondary,
-        fontWeight: '500',
+        fontSize: 15,
+        fontWeight: '700',
     },
     stepIndicator: {
         flexDirection: 'row',
         justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 30,
+        marginTop: 10,
     },
     stepRow: {
         flexDirection: 'row',
@@ -869,52 +923,36 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: Colors.dark.inputBackground,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
+        borderWidth: 1.5,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    stepDotActive: {
-        backgroundColor: Colors.dark.primary,
-        borderColor: Colors.dark.primary,
+        marginRight: 8,
     },
     stepDotText: {
         fontSize: 12,
-        fontWeight: 'bold',
-        color: Colors.dark.textSecondary,
-    },
-    stepDotTextActive: {
-        color: '#fff',
+        fontWeight: '800',
     },
     stepLabel: {
-        fontSize: 10,
-        color: Colors.dark.textSecondary,
-        marginLeft: 4,
-    },
-    stepLabelActive: {
-        color: Colors.dark.primary,
-        fontWeight: '600',
+        fontSize: 12,
+        fontWeight: '500',
     },
     stepLine: {
         width: 20,
-        height: 2,
-        backgroundColor: Colors.dark.border,
-        marginHorizontal: 4,
-    },
-    stepLineActive: {
-        backgroundColor: Colors.dark.primary,
+        height: 1.5,
+        marginHorizontal: 12,
     },
     cpInfoText: {
         fontSize: 14,
-        color: Colors.dark.textSecondary,
-        lineHeight: 20,
         textAlign: 'center',
+        lineHeight: 20,
+        marginBottom: 10,
+        fontWeight: '500',
     },
     otpInput: {
         fontSize: 24,
-        fontWeight: 'bold',
-        letterSpacing: 8,
         textAlign: 'center',
+        letterSpacing: 10,
+        fontWeight: '800',
+        paddingVertical: 16,
     },
 });

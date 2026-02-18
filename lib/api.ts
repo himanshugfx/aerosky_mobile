@@ -241,3 +241,27 @@ export const inventoryApi = {
         return response.data;
     },
 };
+
+// ============================================
+// REIMBURSEMENTS API
+// ============================================
+export const reimbursementsApi = {
+    list: async (status?: string) => {
+        const response = await apiClient.get('/api/reimbursements', {
+            params: { status }
+        });
+        return response.data;
+    },
+
+    submit: async (data: { name: string; amount: number; date: string; billData: string }) => {
+        const response = await apiClient.post('/api/reimbursements', data);
+        return response.data;
+    },
+
+    updateStatus: async (id: string, status: string) => {
+        const response = await apiClient.patch('/api/reimbursements', { id, status });
+        return response.data;
+    },
+};
+
+console.log('Mobile API initialized with base URL:', API_BASE_URL);

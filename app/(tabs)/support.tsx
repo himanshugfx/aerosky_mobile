@@ -1,32 +1,37 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Modal,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+    useColorScheme
+} from 'react-native';
+import Colors, { BorderRadius, Spacing } from '../../constants/Colors';
 import { apiClient } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 
+// Interfaces
 interface SupportTicket {
     id: string;
     subject: string;
     status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
     priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-    createdAt: string;
+    hasNewReply: boolean;
     updatedAt: string;
-    user?: {
-        id: string;
-        fullName: string;
-        email: string;
-        role: string;
-    };
     organization?: {
-        id: string;
         name: string;
     };
     _count?: {
         messages: number;
     };
-    hasNewReply?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -37,24 +42,27 @@ const statusColors: Record<string, string> = {
 };
 
 const priorityColors: Record<string, string> = {
-    LOW: '#6B7280',
-    NORMAL: '#3B82F6',
-    HIGH: '#F97316',
+    LOW: '#3B82F6',
+    NORMAL: '#10B981',
+    HIGH: '#F59E0B',
     URGENT: '#EF4444'
 };
 
 export default function SupportScreen() {
     const router = useRouter();
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
     const { user } = useAuthStore();
+
     const [tickets, setTickets] = useState<SupportTicket[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
 
-    // Form state for new ticket
+    // Form State
     const [subject, setSubject] = useState('');
-    const [message, setMessage] = useState('');
     const [priority, setPriority] = useState<'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'>('NORMAL');
+    const [message, setMessage] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';
@@ -65,7 +73,6 @@ export default function SupportScreen() {
             setTickets(response.data);
         } catch (error) {
             console.error('Failed to fetch tickets:', error);
-            Alert.alert('Error', 'Failed to load support tickets');
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
@@ -82,12 +89,8 @@ export default function SupportScreen() {
     };
 
     const handleCreateTicket = async () => {
-        if (!subject.trim()) {
-            Alert.alert('Error', 'Subject is required');
-            return;
-        }
-        if (!message.trim()) {
-            Alert.alert('Error', 'Message is required');
+        if (!subject.trim() || !message.trim()) {
+            Alert.alert('Error', 'Please fill in all required fields');
             return;
         }
 
@@ -95,17 +98,18 @@ export default function SupportScreen() {
         try {
             await apiClient.post('/api/mobile/support', {
                 subject,
+                priority,
                 message,
-                priority
             });
-            Alert.alert('Success', 'Support ticket created successfully');
             setModalVisible(false);
             setSubject('');
             setMessage('');
             setPriority('NORMAL');
             fetchTickets();
-        } catch (error: any) {
-            Alert.alert('Error', error.response?.data?.error || 'Failed to create ticket');
+            Alert.alert('Success', 'Ticket created successfully');
+        } catch (error) {
+            console.error('Failed to create ticket:', error);
+            Alert.alert('Error', 'Failed to create ticket');
         } finally {
             setIsSubmitting(false);
         }
@@ -117,75 +121,88 @@ export default function SupportScreen() {
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        const now = new Date();
-        const diff = now.getTime() - date.getTime();
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-
-        if (hours < 1) return 'Just now';
-        if (hours < 24) return `${hours}h ago`;
-        if (hours < 48) return 'Yesterday';
+        const today = new Date();
+        if (date.toDateString() === today.toDateString()) {
+            const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return time;
+        }
         return date.toLocaleDateString();
     };
 
-    const renderTicket = ({ item }: { item: SupportTicket }) => (
-        <TouchableOpacity
-            style={styles.ticketCard}
-            onPress={() => openTicketChat(item)}
-        >
-            <View style={styles.ticketHeader}>
-                <View style={[styles.statusBadge, { backgroundColor: statusColors[item.status] + '20' }]}>
-                    <Text style={[styles.statusText, { color: statusColors[item.status] }]}>
-                        {item.status.replace('_', ' ')}
-                    </Text>
+    const renderTicket = ({ item }: { item: SupportTicket }) => {
+        return (
+            <TouchableOpacity
+                style={[styles.ticketCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}
+                onPress={() => openTicketChat(item)}
+                activeOpacity={0.7}
+            >
+                <View style={styles.ticketHeader}>
+                    <View style={[styles.statusBadge, { backgroundColor: statusColors[item.status] + '20' }]}>
+                        <Text style={[styles.statusText, { color: statusColors[item.status] }]}>
+                            {item.status.replace('_', ' ')}
+                        </Text>
+                    </View>
+                    <View style={[styles.priorityBadge, { backgroundColor: priorityColors[item.priority] + '20' }]}>
+                        <Text style={[styles.priorityText, { color: priorityColors[item.priority] }]}>
+                            {item.priority}
+                        </Text>
+                    </View>
                 </View>
-                <View style={[styles.priorityBadge, { backgroundColor: priorityColors[item.priority] + '20' }]}>
-                    <Text style={[styles.priorityText, { color: priorityColors[item.priority] }]}>
-                        {item.priority}
-                    </Text>
-                </View>
-            </View>
 
-            <View style={styles.subjectRow}>
-                <Text style={styles.ticketSubject}>{item.subject}</Text>
-                {!isSuperAdmin && item.hasNewReply && (
-                    <View style={styles.unreadDot} />
+                <View style={styles.subjectRow}>
+                    <Text style={[styles.ticketSubject, { color: theme.text }]}>{item.subject}</Text>
+                    {!isSuperAdmin && item.hasNewReply && (
+                        <View style={[styles.unreadDot, { backgroundColor: theme.error }]} />
+                    )}
+                </View>
+
+                {isSuperAdmin && item.organization && (
+                    <View style={styles.orgInfo}>
+                        <FontAwesome name="building" size={14} color={theme.textSecondary} />
+                        <Text style={[styles.orgName, { color: theme.textSecondary }]}>{item.organization.name}</Text>
+                    </View>
                 )}
-            </View>
 
-            {isSuperAdmin && item.organization && (
-                <View style={styles.orgInfo}>
-                    <FontAwesome name="building" size={12} color={Colors.dark.textSecondary} />
-                    <Text style={styles.orgName}>{item.organization.name}</Text>
-                </View>
-            )}
+                <View style={[styles.cardDivider, { backgroundColor: theme.border }]} />
 
-            <View style={styles.ticketFooter}>
-                <Text style={styles.ticketTime}>{formatDate(item.updatedAt)}</Text>
-                <View style={styles.messageCount}>
-                    <FontAwesome name="comments" size={12} color={Colors.dark.textSecondary} />
-                    <Text style={styles.messageCountText}>{item._count?.messages || 0}</Text>
+                <View style={styles.ticketFooter}>
+                    <View style={[styles.timeBox, { backgroundColor: theme.inputBackground }]}>
+                        <FontAwesome name="clock-o" size={12} color={theme.textSecondary} />
+                        <Text style={[styles.ticketTime, { color: theme.textSecondary }]}>{formatDate(item.updatedAt)}</Text>
+                    </View>
+                    <View style={styles.messageCount}>
+                        <View style={[styles.msgIconBox, { backgroundColor: theme.primary + '15' }]}>
+                            <FontAwesome name="comments" size={12} color={theme.primary} />
+                        </View>
+                        <Text style={[styles.messageCountText, { color: theme.text }]}>{item._count?.messages || 0}</Text>
+                    </View>
                 </View>
-            </View>
-        </TouchableOpacity>
-    );
+            </TouchableOpacity>
+        );
+    };
 
     if (isLoading) {
         return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color={Colors.dark.primary} />
+            <View style={[styles.centered, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <View style={styles.header}>
-                <Text style={styles.title}>
-                    {isSuperAdmin ? 'All Support Tickets' : 'My Support Tickets'}
-                </Text>
+                <View>
+                    <Text style={[styles.title, { color: theme.text }]}>
+                        {isSuperAdmin ? 'Support Center' : 'Help & Support'}
+                    </Text>
+                    <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                        {isSuperAdmin ? 'Platform-wide tickets' : 'Get assistance with your operations'}
+                    </Text>
+                </View>
                 {!isSuperAdmin && (
                     <TouchableOpacity
-                        style={styles.addButton}
+                        style={[styles.addButton, { backgroundColor: theme.primary }]}
                         onPress={() => setModalVisible(true)}
                     >
                         <FontAwesome name="plus" size={14} color="#fff" />
@@ -200,16 +217,18 @@ export default function SupportScreen() {
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContent}
                 refreshControl={
-                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={Colors.dark.primary} />
+                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.primary} />
                 }
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <FontAwesome name="ticket" size={48} color={Colors.dark.border} />
-                        <Text style={styles.emptyTitle}>No Tickets</Text>
-                        <Text style={styles.emptyText}>
+                        <View style={[styles.emptyIconBox, { backgroundColor: theme.cardBackground }]}>
+                            <FontAwesome name="ticket" size={40} color={theme.border} />
+                        </View>
+                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Tickets Found</Text>
+                        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                             {isSuperAdmin
                                 ? 'No support tickets from organizations yet'
-                                : 'Need help? Create a support ticket'
+                                : 'Need help? Create a support ticket and our team will assist you.'
                             }
                         </Text>
                     </View>
@@ -223,32 +242,40 @@ export default function SupportScreen() {
                 transparent={true}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Contact Support</Text>
-                        <Text style={styles.modalSubtitle}>We'll respond as soon as possible</Text>
+                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                        <View style={styles.modalHeader}>
+                            <View>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>Contact Support</Text>
+                                <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>We'll respond as soon as possible</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.closeBtn, { backgroundColor: theme.cardBackground }]}>
+                                <FontAwesome name="times" size={18} color={theme.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Subject *</Text>
+                            <Text style={[styles.label, { color: theme.textSecondary }]}>Subject *</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
                                 value={subject}
                                 onChangeText={setSubject}
                                 placeholder="Brief description of your issue"
-                                placeholderTextColor={Colors.dark.textSecondary}
+                                placeholderTextColor={theme.textSecondary + '60'}
                             />
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Priority</Text>
+                            <Text style={[styles.label, { color: theme.textSecondary }]}>Priority Level</Text>
                             <View style={styles.priorityOptions}>
                                 {(['LOW', 'NORMAL', 'HIGH', 'URGENT'] as const).map((p) => (
                                     <TouchableOpacity
                                         key={p}
                                         style={[
                                             styles.priorityOption,
+                                            { backgroundColor: theme.cardBackground, borderColor: theme.border },
                                             priority === p && {
-                                                backgroundColor: priorityColors[p] + '30',
+                                                backgroundColor: priorityColors[p] + '15',
                                                 borderColor: priorityColors[p]
                                             }
                                         ]}
@@ -256,7 +283,8 @@ export default function SupportScreen() {
                                     >
                                         <Text style={[
                                             styles.priorityOptionText,
-                                            priority === p && { color: priorityColors[p] }
+                                            { color: theme.textSecondary },
+                                            priority === p && { color: priorityColors[p], fontWeight: '800' }
                                         ]}>
                                             {p}
                                         </Text>
@@ -266,38 +294,33 @@ export default function SupportScreen() {
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Message *</Text>
+                            <Text style={[styles.label, { color: theme.textSecondary }]}>Message Details *</Text>
                             <TextInput
-                                style={[styles.input, styles.textArea]}
+                                style={[styles.input, styles.textArea, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
                                 value={message}
                                 onChangeText={setMessage}
                                 placeholder="Describe your issue in detail..."
-                                placeholderTextColor={Colors.dark.textSecondary}
+                                placeholderTextColor={theme.textSecondary + '60'}
                                 multiline
                                 numberOfLines={4}
                                 textAlignVertical="top"
                             />
                         </View>
 
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => setModalVisible(false)}
-                            >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.submitButton]}
-                                onPress={handleCreateTicket}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                    <Text style={styles.submitButtonText}>Submit</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity
+                            style={[styles.submitButton, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
+                            onPress={handleCreateTicket}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Text style={styles.submitButtonText}>Submit Support Ticket</Text>
+                            )}
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+                            <Text style={[styles.cancelBtnText, { color: theme.textSecondary }]}>Cancel</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
@@ -308,182 +331,239 @@ export default function SupportScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.dark.background,
     },
     centered: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: Colors.dark.background,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: Spacing.lg,
-        paddingBottom: Spacing.sm,
+        paddingBottom: Spacing.md,
+        marginTop: Spacing.sm,
     },
     title: {
-        fontSize: FontSizes.xl,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
+        fontSize: 24,
+        fontWeight: '800',
+        letterSpacing: -0.5,
+    },
+    subtitle: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginTop: 2,
     },
     addButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.dark.primary,
         paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: BorderRadius.md,
-        gap: 6,
+        paddingVertical: 10,
+        borderRadius: BorderRadius.lg,
+        gap: 8,
+        elevation: 4,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
     },
     addButtonText: {
         color: '#fff',
-        fontWeight: '600',
-        fontSize: 13,
+        fontWeight: '700',
+        fontSize: 14,
     },
     listContent: {
         padding: Spacing.lg,
-        paddingTop: Spacing.sm,
+        paddingBottom: 40,
     },
     ticketCard: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.md,
+        borderRadius: 20,
+        padding: Spacing.lg,
         marginBottom: Spacing.md,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
+        borderWidth: 1.5,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
     },
     ticketHeader: {
         flexDirection: 'row',
         gap: 8,
-        marginBottom: 8,
+        marginBottom: 12,
     },
     statusBadge: {
-        paddingHorizontal: 8,
+        paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 4,
+        borderRadius: 6,
     },
     statusText: {
         fontSize: 10,
-        fontWeight: '700',
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     priorityBadge: {
-        paddingHorizontal: 8,
+        paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 4,
+        borderRadius: 6,
     },
     priorityText: {
         fontSize: 10,
-        fontWeight: '700',
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     subjectRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        marginBottom: 8,
+        marginBottom: 12,
     },
     ticketSubject: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: Colors.dark.text,
+        fontSize: 18,
+        fontWeight: '700',
         flex: 1,
+        letterSpacing: -0.3,
     },
     unreadDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#EF4444',
+        width: 10,
+        height: 10,
+        borderRadius: 5,
     },
     orgInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        marginBottom: 8,
+        gap: 8,
+        marginBottom: 12,
     },
     orgName: {
-        fontSize: 12,
-        color: Colors.dark.textSecondary,
+        fontSize: 13,
+        fontWeight: '600',
+    },
+    cardDivider: {
+        height: 1,
+        width: '100%',
+        marginVertical: 12,
+        opacity: 0.5,
     },
     ticketFooter: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginTop: 4,
+    },
+    timeBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
     },
     ticketTime: {
-        fontSize: 12,
-        color: Colors.dark.textSecondary,
+        fontSize: 11,
+        fontWeight: '600',
     },
     messageCount: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 8,
+    },
+    msgIconBox: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     messageCountText: {
-        fontSize: 12,
-        color: Colors.dark.textSecondary,
+        fontSize: 13,
+        fontWeight: '700',
     },
     emptyState: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 60,
+        paddingVertical: 80,
+    },
+    emptyIconBox: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+        borderWidth: 1.5,
+        borderColor: 'rgba(255,255,255,0.05)',
     },
     emptyTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
-        marginTop: 16,
+        fontWeight: '800',
+        marginTop: 8,
     },
     emptyText: {
-        color: Colors.dark.textSecondary,
         fontSize: 14,
-        marginTop: 4,
+        marginTop: 8,
         textAlign: 'center',
+        paddingHorizontal: 40,
+        lineHeight: 20,
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.7)',
         justifyContent: 'center',
-        padding: Spacing.xl,
+        padding: Spacing.lg,
     },
     modalContent: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.xl,
+        borderRadius: 24,
         padding: Spacing.xl,
         borderWidth: 1,
-        borderColor: Colors.dark.border,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: Spacing.xl,
     },
     modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
-        marginBottom: 4,
+        fontSize: 22,
+        fontWeight: '800',
+        letterSpacing: -0.5,
     },
     modalSubtitle: {
-        fontSize: 12,
-        color: Colors.dark.textSecondary,
-        marginBottom: Spacing.xl,
+        fontSize: 13,
+        marginTop: 4,
+        fontWeight: '500',
+    },
+    closeBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     inputGroup: {
         marginBottom: Spacing.lg,
     },
     label: {
-        fontSize: 14,
-        color: Colors.dark.textSecondary,
+        fontSize: 12,
         marginBottom: 8,
-        fontWeight: '500',
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     input: {
-        backgroundColor: Colors.dark.inputBackground,
-        borderRadius: BorderRadius.md,
+        borderRadius: BorderRadius.lg,
         padding: Spacing.md,
-        color: Colors.dark.text,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
+        borderWidth: 1.5,
+        fontSize: 15,
+        fontWeight: '500',
     },
     textArea: {
-        minHeight: 100,
+        minHeight: 120,
     },
     priorityOptions: {
         flexDirection: 'row',
@@ -491,42 +571,38 @@ const styles = StyleSheet.create({
     },
     priorityOption: {
         flex: 1,
-        paddingVertical: 8,
-        borderRadius: BorderRadius.md,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
+        paddingVertical: 10,
+        borderRadius: BorderRadius.lg,
+        borderWidth: 1.5,
         alignItems: 'center',
     },
     priorityOptionText: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: Colors.dark.textSecondary,
-    },
-    modalButtons: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: 12,
-        marginTop: Spacing.lg,
-    },
-    modalButton: {
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: BorderRadius.md,
-        minWidth: 100,
-        alignItems: 'center',
-    },
-    cancelButton: {
-        backgroundColor: 'transparent',
-    },
-    cancelButtonText: {
-        color: Colors.dark.textSecondary,
-        fontWeight: '600',
+        fontSize: 10,
+        fontWeight: '700',
     },
     submitButton: {
-        backgroundColor: Colors.dark.primary,
+        borderRadius: BorderRadius.xl,
+        padding: Spacing.xl,
+        alignItems: 'center',
+        marginTop: Spacing.sm,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
     submitButtonText: {
         color: '#fff',
-        fontWeight: '600',
+        fontSize: 16,
+        fontWeight: '800',
+        letterSpacing: 0.5,
+    },
+    cancelBtn: {
+        padding: Spacing.lg,
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    cancelBtnText: {
+        fontWeight: '700',
+        fontSize: 14,
     },
 });

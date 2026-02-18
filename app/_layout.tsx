@@ -15,6 +15,7 @@ import { useAuthStore } from '../lib/store';
 export {
   ErrorBoundary
 } from 'expo-router';
+import Colors from '../constants/Colors';
 
 export const unstable_settings = {
   initialRouteName: '(auth)',
@@ -99,11 +100,11 @@ function RootLayoutNav() {
     ...DarkTheme,
     colors: {
       ...DarkTheme.colors,
-      background: '#111827',
-      card: '#1F2937',
-      primary: '#3B82F6',
-      text: '#F9FAFB',
-      border: '#374151',
+      background: Colors.dark.background,
+      card: Colors.dark.cardBackground,
+      primary: Colors.dark.primary,
+      text: Colors.dark.text,
+      border: Colors.dark.border,
     },
   };
 
@@ -111,11 +112,11 @@ function RootLayoutNav() {
     ...DefaultTheme,
     colors: {
       ...DefaultTheme.colors,
-      background: '#F9FAFB',
-      card: '#FFFFFF',
-      primary: '#0066CC',
-      text: '#1F2937',
-      border: '#E5E7EB',
+      background: Colors.light.background,
+      card: Colors.light.cardBackground,
+      primary: Colors.light.primary,
+      text: Colors.light.text,
+      border: Colors.light.border,
     },
   };
 

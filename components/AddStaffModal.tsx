@@ -1,3 +1,4 @@
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -10,6 +11,7 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    useColorScheme
 } from 'react-native';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../constants/Colors';
 import { Role, ROLE_DISPLAY_NAMES } from '../lib/permissions';
@@ -22,7 +24,6 @@ interface AddStaffModalProps {
     initialData?: any;
 }
 
-// Available roles for staff (excludes SUPER_ADMIN which is reserved)
 const ASSIGNABLE_ROLES: { value: Role; label: string }[] = [
     { value: 'ADMIN', label: 'Administrator' },
     { value: 'OPERATIONS_MANAGER', label: 'Operations Manager' },
@@ -42,8 +43,9 @@ export default function AddStaffModal({ visible, onClose, onSubmit, initialData 
     const [role, setRole] = useState<Role>(initialData?.role || 'VIEWER');
     const [showRolePicker, setShowRolePicker] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
 
-    // Check if current user can assign roles
     const canAssignRoles = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
 
     useEffect(() => {
@@ -84,128 +86,147 @@ export default function AddStaffModal({ visible, onClose, onSubmit, initialData 
 
     return (
         <Modal visible={visible} animationType="slide" transparent>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.modalOverlay}
-            >
-                <View style={styles.modalContent}>
-                    <View style={styles.header}>
-                        <Text style={styles.title}>{initialData ? 'Edit Staff Member' : 'Add New Staff Member'}</Text>
-                        <TouchableOpacity onPress={onClose}>
-                            <Text style={styles.closeButton}>✕</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <ScrollView style={styles.form}>
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Full Name *</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={name}
-                                onChangeText={setName}
-                                placeholder="Enter name"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Access ID *</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={accessId}
-                                onChangeText={setAccessId}
-                                placeholder="e.g. EMP001"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Position</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={position}
-                                onChangeText={setPosition}
-                                placeholder="e.g. Senior Pilot"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Email</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={email}
-                                onChangeText={setEmail}
-                                placeholder="Enter email"
-                                keyboardType="email-address"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Phone</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={phone}
-                                onChangeText={setPhone}
-                                placeholder="Enter phone"
-                                keyboardType="phone-pad"
-                                placeholderTextColor={Colors.dark.textSecondary}
-                            />
-                        </View>
-
-                        {/* Role Dropdown - Only for SUPER_ADMIN and ADMIN */}
-                        {canAssignRoles && (
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Role</Text>
-                                <TouchableOpacity
-                                    style={styles.dropdown}
-                                    onPress={() => setShowRolePicker(!showRolePicker)}
-                                >
-                                    <Text style={styles.dropdownText}>{getRoleLabel(role)}</Text>
-                                    <Text style={styles.dropdownArrow}>{showRolePicker ? '▲' : '▼'}</Text>
-                                </TouchableOpacity>
-
-                                {showRolePicker && (
-                                    <View style={styles.rolePickerContainer}>
-                                        {ASSIGNABLE_ROLES.map((option) => (
-                                            <TouchableOpacity
-                                                key={option.value}
-                                                style={[
-                                                    styles.roleOption,
-                                                    role === option.value && styles.roleOptionSelected
-                                                ]}
-                                                onPress={() => {
-                                                    setRole(option.value);
-                                                    setShowRolePicker(false);
-                                                }}
-                                            >
-                                                <Text style={[
-                                                    styles.roleOptionText,
-                                                    role === option.value && styles.roleOptionTextSelected
-                                                ]}>
-                                                    {option.label}
-                                                </Text>
-                                                {role === option.value && (
-                                                    <Text style={styles.checkmark}>✓</Text>
-                                                )}
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                )}
+            <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.keyboardView}
+                >
+                    <View style={[styles.modalContent, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                        <View style={styles.header}>
+                            <View>
+                                <Text style={[styles.title, { color: theme.text }]}>
+                                    {initialData ? 'Edit Personnel' : 'New Personnel'}
+                                </Text>
+                                <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                                    Manage team members and access
+                                </Text>
                             </View>
-                        )}
+                            <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: theme.cardBackground }]}>
+                                <FontAwesome name="times" size={18} color={theme.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
 
-                        <TouchableOpacity
-                            style={[styles.submitButton, (!name.trim() || !accessId.trim()) && styles.disabledButton]}
-                            onPress={handleSubmit}
-                            disabled={isLoading || !name.trim() || !accessId.trim()}
-                        >
-                            {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>{initialData ? 'Update Member' : 'Add Member'}</Text>}
-                        </TouchableOpacity>
-                    </ScrollView>
-                </View>
-            </KeyboardAvoidingView>
+                        <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>Full Name *</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+                                    value={name}
+                                    onChangeText={setName}
+                                    placeholder="Enter full name"
+                                    placeholderTextColor={theme.textSecondary + '60'}
+                                />
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>Access / Employee ID *</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+                                    value={accessId}
+                                    onChangeText={setAccessId}
+                                    placeholder="e.g. SKY-001"
+                                    placeholderTextColor={theme.textSecondary + '60'}
+                                />
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>Position</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+                                    value={position}
+                                    onChangeText={setPosition}
+                                    placeholder="e.g. Chief Remote Pilot"
+                                    placeholderTextColor={theme.textSecondary + '60'}
+                                />
+                            </View>
+
+                            <View style={styles.row}>
+                                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                                    <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
+                                    <TextInput
+                                        style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+                                        value={email}
+                                        onChangeText={setEmail}
+                                        placeholder="email@skynet.com"
+                                        keyboardType="email-address"
+                                        placeholderTextColor={theme.textSecondary + '60'}
+                                    />
+                                </View>
+                                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                                    <Text style={[styles.label, { color: theme.textSecondary }]}>Phone</Text>
+                                    <TextInput
+                                        style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+                                        value={phone}
+                                        onChangeText={setPhone}
+                                        placeholder="+91..."
+                                        keyboardType="phone-pad"
+                                        placeholderTextColor={theme.textSecondary + '60'}
+                                    />
+                                </View>
+                            </View>
+
+                            {canAssignRoles && (
+                                <View style={styles.inputGroup}>
+                                    <Text style={[styles.label, { color: theme.textSecondary }]}>Platform Role</Text>
+                                    <TouchableOpacity
+                                        style={[styles.dropdown, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}
+                                        onPress={() => setShowRolePicker(!showRolePicker)}
+                                    >
+                                        <Text style={[styles.dropdownText, { color: theme.text }]}>{getRoleLabel(role)}</Text>
+                                        <FontAwesome name={showRolePicker ? "chevron-up" : "chevron-down"} size={12} color={theme.textSecondary} />
+                                    </TouchableOpacity>
+
+                                    {showRolePicker && (
+                                        <View style={[styles.rolePickerContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                                            {ASSIGNABLE_ROLES.map((option) => (
+                                                <TouchableOpacity
+                                                    key={option.value}
+                                                    style={[
+                                                        styles.roleOption,
+                                                        { borderBottomColor: theme.border },
+                                                        role === option.value && { backgroundColor: theme.primary + '15' }
+                                                    ]}
+                                                    onPress={() => {
+                                                        setRole(option.value);
+                                                        setShowRolePicker(false);
+                                                    }}
+                                                >
+                                                    <Text style={[
+                                                        styles.roleOptionText,
+                                                        { color: theme.text },
+                                                        role === option.value && { color: theme.primary, fontWeight: '700' }
+                                                    ]}>
+                                                        {option.label}
+                                                    </Text>
+                                                    {role === option.value && (
+                                                        <FontAwesome name="check" size={14} color={theme.primary} />
+                                                    )}
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                    )}
+                                </View>
+                            )}
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.submitButton,
+                                    { backgroundColor: theme.primary, shadowColor: theme.primary },
+                                    (!name.trim() || !accessId.trim() || isLoading) && styles.disabledButton
+                                ]}
+                                onPress={handleSubmit}
+                                disabled={isLoading || !name.trim() || !accessId.trim()}
+                            >
+                                {isLoading ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Text style={styles.submitButtonText}>{initialData ? 'Update Record' : 'Add to Team'}</Text>
+                                )}
+                            </TouchableOpacity>
+                        </ScrollView>
+                    </View>
+                </KeyboardAvoidingView>
+            </View>
         </Modal>
     );
 }
@@ -213,74 +234,84 @@ export default function AddStaffModal({ visible, onClose, onSubmit, initialData 
 const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.75)',
         justifyContent: 'flex-end',
     },
+    keyboardView: {
+        width: '100%',
+    },
     modalContent: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderTopLeftRadius: BorderRadius.xl,
-        borderTopRightRadius: BorderRadius.xl,
-        padding: Spacing.lg,
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        padding: Spacing.xl,
+        borderWidth: 1,
+        borderBottomWidth: 0,
+        paddingBottom: Platform.OS === 'ios' ? 40 : Spacing.xl,
         maxHeight: '90%',
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: Spacing.lg,
+        alignItems: 'flex-start',
+        marginBottom: Spacing.xl,
     },
     title: {
-        fontSize: FontSizes.xl,
-        fontWeight: 'bold',
-        color: Colors.dark.text,
+        fontSize: 22,
+        fontWeight: '800',
+        letterSpacing: -0.5,
     },
-    closeButton: {
-        fontSize: 24,
-        color: Colors.dark.textSecondary,
+    subtitle: {
+        fontSize: 13,
+        marginTop: 4,
+        fontWeight: '500',
+    },
+    closeBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     form: {
-        marginBottom: Spacing.xl,
+        marginBottom: Spacing.md,
     },
     inputGroup: {
         marginBottom: Spacing.md,
     },
-    label: {
-        fontSize: FontSizes.sm,
-        color: Colors.dark.textSecondary,
+    row: {
+        flexDirection: 'row',
         marginBottom: Spacing.xs,
     },
+    label: {
+        fontSize: 12,
+        marginBottom: 8,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
     input: {
-        backgroundColor: Colors.dark.inputBackground,
-        borderRadius: BorderRadius.md,
+        borderRadius: BorderRadius.lg,
         padding: Spacing.md,
-        color: Colors.dark.text,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
+        borderWidth: 1.5,
+        fontSize: 15,
+        fontWeight: '500',
     },
     dropdown: {
-        backgroundColor: Colors.dark.inputBackground,
-        borderRadius: BorderRadius.md,
+        borderRadius: BorderRadius.lg,
         padding: Spacing.md,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
+        borderWidth: 1.5,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
     dropdownText: {
-        color: Colors.dark.text,
-        fontSize: FontSizes.md,
-    },
-    dropdownArrow: {
-        color: Colors.dark.textSecondary,
-        fontSize: 12,
+        fontSize: 15,
+        fontWeight: '500',
     },
     rolePickerContainer: {
-        backgroundColor: Colors.dark.background,
-        borderRadius: BorderRadius.md,
+        borderRadius: BorderRadius.lg,
         marginTop: Spacing.xs,
         borderWidth: 1,
-        borderColor: Colors.dark.border,
         overflow: 'hidden',
     },
     roleOption: {
@@ -289,37 +320,28 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         borderBottomWidth: 1,
-        borderBottomColor: Colors.dark.border,
-    },
-    roleOptionSelected: {
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
     },
     roleOptionText: {
-        color: Colors.dark.text,
-        fontSize: FontSizes.md,
-    },
-    roleOptionTextSelected: {
-        color: Colors.dark.primary,
-        fontWeight: '600',
-    },
-    checkmark: {
-        color: Colors.dark.primary,
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontSize: 14,
+        fontWeight: '500',
     },
     submitButton: {
-        backgroundColor: Colors.dark.primary,
-        borderRadius: BorderRadius.md,
-        padding: Spacing.md,
+        borderRadius: BorderRadius.xl,
+        padding: Spacing.xl,
         alignItems: 'center',
-        marginTop: Spacing.md,
+        marginTop: Spacing.lg,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
     disabledButton: {
         opacity: 0.5,
     },
     submitButtonText: {
         color: '#fff',
-        fontSize: FontSizes.md,
-        fontWeight: 'bold',
+        fontSize: 16,
+        fontWeight: '800',
+        letterSpacing: 0.5,
     },
 });

@@ -9,58 +9,62 @@ import {
     Text,
     TouchableOpacity,
     View,
+    useColorScheme
 } from 'react-native';
 import AddStaffModal from '../../components/AddStaffModal';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
 import type { TeamMember } from '../../lib/types';
 
-const StaffCard = ({
+const TeamMemberCard = ({
     member,
     onEdit,
     onDelete,
+    theme
 }: {
     member: TeamMember;
     onEdit: (member: TeamMember) => void;
     onDelete: (id: string) => void;
+    theme: any;
 }) => (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
         <View style={styles.cardHeader}>
-            <View style={[styles.avatar, { backgroundColor: Colors.dark.primary + '20' }]}>
-                <Text style={[styles.avatarText, { color: Colors.dark.primary }]}>
-                    {member.name.charAt(0).toUpperCase()}
-                </Text>
+            <View style={[styles.iconBox, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '30' }]}>
+                <FontAwesome name="user" size={24} color={theme.primary} />
             </View>
             <View style={styles.infoContainer}>
                 <View style={styles.nameRow}>
-                    <Text style={styles.name}>{member.name}</Text>
-                    <View style={styles.actionIcons}>
-                        <TouchableOpacity onPress={() => onEdit(member)} style={styles.iconBtn}>
-                            <FontAwesome name="edit" size={16} color={Colors.dark.textSecondary} />
+                    <Text style={[styles.name, { color: theme.text }]}>{member.name}</Text>
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                        <TouchableOpacity onPress={() => onEdit(member)} style={[styles.iconBtn, { backgroundColor: theme.background }]}>
+                            <FontAwesome name="edit" size={14} color={theme.textSecondary} />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => onDelete(member.id)} style={styles.iconBtn}>
-                            <FontAwesome name="trash" size={16} color={Colors.dark.error} />
+                        <TouchableOpacity onPress={() => onDelete(member.id)} style={[styles.iconBtn, { backgroundColor: theme.error + '15' }]}>
+                            <FontAwesome name="trash" size={14} color={theme.error} />
                         </TouchableOpacity>
                     </View>
                 </View>
-                <Text style={styles.position}>{member.position || 'No Position'}</Text>
+                <View style={styles.badgeContainer}>
+                    <View style={[styles.typeBadge, { backgroundColor: theme.primary + '15' }]}>
+                        <Text style={[styles.typeText, { color: theme.primary }]}>{member.position || 'Team Member'}</Text>
+                    </View>
+                    {member.accessId && (
+                        <Text style={[styles.accessIdText, { color: theme.textSecondary }]}>ID: {member.accessId}</Text>
+                    )}
+                </View>
             </View>
         </View>
 
-        <View style={styles.cardDivider} />
+        <View style={[styles.cardDivider, { backgroundColor: theme.border }]} />
 
         <View style={styles.detailsGrid}>
             <View style={styles.detailItem}>
-                <Text style={styles.label}>Access ID</Text>
-                <Text style={styles.value}>{member.accessId}</Text>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
+                <Text style={[styles.value, { color: theme.text }]}>{member.email || 'N/A'}</Text>
             </View>
             <View style={styles.detailItem}>
-                <Text style={styles.label}>Phone</Text>
-                <Text style={styles.value}>{member.phone || 'N/A'}</Text>
-            </View>
-            <View style={styles.detailItemFull}>
-                <Text style={styles.label}>Email</Text>
-                <Text style={styles.value}>{member.email || 'N/A'}</Text>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>Phone</Text>
+                <Text style={[styles.value, { color: theme.text }]}>{member.phone || 'N/A'}</Text>
             </View>
         </View>
     </View>
@@ -71,6 +75,8 @@ export default function StaffScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'dark'];
 
     useEffect(() => {
         fetchTeamMembers();
@@ -91,10 +97,10 @@ export default function StaffScreen() {
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert('Delete Member', 'Are you sure you want to delete this team member?', [
+        Alert.alert('Remove Member', 'Are you sure you want to remove this team member?', [
             { text: 'Cancel', style: 'cancel' },
             {
-                text: 'Delete',
+                text: 'Remove',
                 style: 'destructive',
                 onPress: async () => {
                     await deleteTeamMember(id);
@@ -110,40 +116,52 @@ export default function StaffScreen() {
 
     if (loading && teamMembers.length === 0) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={Colors.dark.primary} />
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <FlatList
                 data={teamMembers}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <StaffCard member={item} onEdit={openEditModal} onDelete={handleDelete} />
+                    <TeamMemberCard member={item} onEdit={openEditModal} onDelete={handleDelete} theme={theme} />
                 )}
                 contentContainerStyle={styles.listContent}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.dark.primary} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
                 }
                 ListHeaderComponent={
                     <View style={styles.listHeader}>
-                        <Text style={styles.headerTitle}>{teamMembers.length} Team Members</Text>
+                        <Text style={[styles.headerTitle, { color: theme.textSecondary }]}>
+                            {teamMembers.length} TEAM MEMBERS
+                        </Text>
                     </View>
                 }
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <FontAwesome name="users" size={64} color={Colors.dark.border} />
-                        <Text style={styles.emptyTitle}>No Team Members Found</Text>
-                        <Text style={styles.emptySubtitle}>Start by adding your first team member</Text>
+                        <View style={[styles.emptyIconContainer, { backgroundColor: theme.cardBackground }]}>
+                            <FontAwesome name="users" size={48} color={theme.border} />
+                        </View>
+                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Team Members</Text>
+                        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+                            Add your team members to manage personnel and organizational compliance.
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.emptyAddBtn, { backgroundColor: theme.primary }]}
+                            onPress={() => { setEditingMember(null); setIsModalVisible(true); }}
+                        >
+                            <Text style={styles.emptyAddBtnText}>Add Team Member</Text>
+                        </TouchableOpacity>
                     </View>
                 }
             />
 
             <TouchableOpacity
-                style={styles.fab}
+                style={[styles.fab, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
                 onPress={() => {
                     setEditingMember(null);
                     setIsModalVisible(true);
@@ -163,58 +181,81 @@ export default function StaffScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.dark.background },
+    container: { flex: 1 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     listContent: { padding: Spacing.md, paddingBottom: 100 },
-    listHeader: { marginBottom: Spacing.md },
-    headerTitle: { fontSize: FontSizes.md, color: Colors.dark.textSecondary, fontWeight: '600' },
+    listHeader: { marginBottom: Spacing.md, marginTop: Spacing.xs },
+    headerTitle: { fontSize: 12, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' },
     card: {
-        backgroundColor: Colors.dark.cardBackground,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.md,
+        borderRadius: 24,
+        padding: Spacing.lg,
         marginBottom: Spacing.md,
-        borderWidth: 1,
-        borderColor: Colors.dark.border,
+        borderWidth: 1.5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 3,
     },
     cardHeader: { flexDirection: 'row', alignItems: 'center' },
-    avatar: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+    iconBox: {
+        width: 54,
+        height: 54,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: Spacing.md,
+        borderWidth: 1,
     },
-    avatarText: { fontSize: 20, fontWeight: 'bold' },
     infoContainer: { flex: 1 },
     nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    name: { fontSize: FontSizes.lg, fontWeight: '700', color: Colors.dark.text },
-    actionIcons: { flexDirection: 'row', gap: Spacing.sm },
-    iconBtn: { padding: 4 },
-    position: { fontSize: FontSizes.sm, color: Colors.dark.primary, marginTop: 2, fontWeight: '500' },
-    cardDivider: { height: 1, backgroundColor: Colors.dark.border, marginVertical: Spacing.md },
-    detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
-    detailItem: { width: '47%' },
-    detailItemFull: { width: '100%' },
-    label: { fontSize: FontSizes.xs, color: Colors.dark.textSecondary, marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
-    value: { fontSize: FontSizes.sm, color: Colors.dark.text, fontWeight: '600' },
+    name: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
+    iconBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    badgeContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+    typeBadge: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: 10,
+        paddingVertical: 3,
+        borderRadius: 8,
+    },
+    typeText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
+    accessIdText: { fontSize: 12, fontWeight: '700' },
+    cardDivider: { height: 1.5, marginVertical: Spacing.lg, opacity: 0.5 },
+    detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.lg },
+    detailItem: { width: '46%' },
+    label: { fontSize: 11, marginBottom: 4, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
+    value: { fontSize: 14, fontWeight: '600' },
     emptyState: { alignItems: 'center', justifyContent: 'center', marginTop: 100, paddingHorizontal: 40 },
-    emptyTitle: { fontSize: FontSizes.xl, color: Colors.dark.text, fontWeight: 'bold', marginTop: 16 },
-    emptySubtitle: { fontSize: FontSizes.md, color: Colors.dark.textSecondary, textAlign: 'center', marginTop: 8 },
-    fab: {
-        position: 'absolute',
-        right: Spacing.lg,
-        bottom: Spacing.lg,
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: Colors.dark.primary,
+    emptyIconContainer: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
         alignItems: 'center',
         justifyContent: 'center',
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        marginBottom: 20,
+    },
+    emptyTitle: { fontSize: 20, fontWeight: '800', marginBottom: 8 },
+    emptySubtitle: { fontSize: 15, textAlign: 'center', lineHeight: 22, fontWeight: '500' },
+    emptyAddBtn: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: BorderRadius.xl, marginTop: 24 },
+    emptyAddBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
+    fab: {
+        position: 'absolute',
+        right: 24,
+        bottom: 24,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 8,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
     },
 });
