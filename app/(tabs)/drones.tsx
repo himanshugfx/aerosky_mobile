@@ -28,7 +28,7 @@ const DroneCard = ({
         <TouchableOpacity style={styles.card} onPress={() => router.push(`/drone/${drone.id}`)}>
             <View style={styles.cardHeader}>
                 <View style={[styles.iconBox, { backgroundColor: Colors.dark.primary + '20' }]}>
-                    <FontAwesome name="fighter-jet" size={24} color={Colors.dark.primary} />
+                    <FontAwesome name="cube" size={24} color={Colors.dark.primary} />
                 </View>
                 <View style={styles.infoContainer}>
                     <View style={styles.nameRow}>
@@ -50,7 +50,7 @@ const DroneCard = ({
 
             <View style={styles.cardDetails}>
                 <View style={styles.detailItem}>
-                    <Text style={styles.label}>Units</Text>
+                    <Text style={styles.label}>Manufactured Units</Text>
                     <Text style={styles.value}>{drone.manufacturedUnits?.length || 0}</Text>
                 </View>
                 <View style={styles.detailItem}>
@@ -100,7 +100,7 @@ export default function DronesScreen() {
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert('Delete Drone', 'Are you sure you want to delete this drone configuration?', [
+        Alert.alert('Decommission Aircraft', 'Decommission this aircraft from active fleet registry? This action is irreversible.', [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Delete',
@@ -132,7 +132,7 @@ export default function DronesScreen() {
                 }
                 ListHeaderComponent={
                     <View style={styles.listHeader}>
-                        <Text style={styles.headerTitle}>{drones.length} Drones Registered</Text>
+                        <Text style={styles.headerTitle}>{drones.length} AERIAL ASSETS REGISTERED</Text>
                         <TouchableOpacity style={styles.filterBtn}>
                             <FontAwesome name="filter" size={14} color={Colors.dark.primary} />
                             <Text style={styles.filterBtnText}>Sort</Text>
@@ -141,14 +141,14 @@ export default function DronesScreen() {
                 }
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <FontAwesome name="fighter-jet" size={64} color={Colors.dark.border} />
-                        <Text style={styles.emptyTitle}>No Drones Registered</Text>
-                        <Text style={styles.emptySubtitle}>Start by adding your first drone model</Text>
+                        <FontAwesome name="cube" size={64} color={Colors.dark.border} />
+                        <Text style={styles.emptyTitle}>No Aerial Assets</Text>
+                        <Text style={styles.emptySubtitle}>Register your first UAV unit to begin fleet management.</Text>
                         <TouchableOpacity
                             style={styles.emptyAddBtn}
                             onPress={() => setIsAddModalVisible(true)}
                         >
-                            <Text style={styles.emptyAddBtnText}>+ Add Drone</Text>
+                            <Text style={styles.emptyAddBtnText}>+ Register Aircraft</Text>
                         </TouchableOpacity>
                     </View>
                 }

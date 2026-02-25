@@ -18,14 +18,15 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   const menuItems = [
     { name: 'index', label: 'Dashboard', icon: 'home', roles: ['ALL'] },
     { name: 'organizations', label: 'Organizations', icon: 'building', roles: ['SUPER_ADMIN'] },
-    { name: 'drones', label: 'Drones', icon: 'plane', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
-    { name: 'staff', label: 'Team Members', icon: 'users', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
-    { name: 'subcontractors', label: 'Subcontractors', icon: 'building', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
+    { name: 'drones', label: 'Fleet', icon: 'plane', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
+    { name: 'staff', label: 'Personnel', icon: 'users', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
+    { name: 'subcontractors', label: 'Partners', icon: 'building', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'inventory', label: 'Inventory', icon: 'archive', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
-    { name: 'batteries', label: 'Batteries', icon: 'bolt', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'orders', label: 'Orders', icon: 'list-alt', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
-    { name: 'flights', label: 'Flights', icon: 'send', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
+    { name: 'batteries', label: 'Power Units', icon: 'bolt', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
+    { name: 'flights', label: 'Flight Logs', icon: 'send', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'accounts', label: 'Accounts', icon: 'credit-card', roles: ['ALL'] },
+    { name: 'support', label: 'Assistance', icon: 'question-circle', roles: ['ALL'] },
     { name: 'profile', label: 'Profile', icon: 'user', roles: ['ALL'] },
   ];
 
@@ -40,7 +41,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   };
 
   return (
-    <View style={[styles.drawerContainer, { backgroundColor: colors.cardBackground }]}>
+    <View style={[styles.drawerContainer, { backgroundColor: colors.sidebar }]}>
       {/* Header */}
       <View style={[styles.drawerHeader, { borderBottomColor: colors.border }]}>
         <View style={styles.logoContainer}>
@@ -60,10 +61,10 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
               </Text>
             </View>
             <View style={styles.userDetails}>
-              <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
+              <Text style={[styles.userName, { color: '#fff' }]} numberOfLines={1}>
                 {user.fullName || user.username || 'User'}
               </Text>
-              <Text style={[styles.userEmail, { color: colors.textSecondary }]} numberOfLines={1}>
+              <Text style={[styles.userEmail, { color: 'rgba(255,255,255,0.6)' }]} numberOfLines={1}>
                 {user.role === 'SUPER_ADMIN' ? 'Platform Administrator' : (user.organizationName || 'Company Admin')}
               </Text>
             </View>
@@ -88,11 +89,11 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
               <FontAwesome
                 name={item.icon as any}
                 size={20}
-                color={isActive ? colors.primary : colors.textSecondary}
+                color={isActive ? colors.primary : 'rgba(255,255,255,0.7)'}
               />
               <Text style={[
                 styles.menuLabel,
-                { color: isActive ? colors.primary : colors.text }
+                { color: isActive ? colors.primary : '#fff' }
               ]}>
                 {item.label}
               </Text>
@@ -175,24 +176,24 @@ export default function DrawerLayout() {
       <Drawer.Screen
         name="drones"
         options={{
-          title: 'My Drones',
-          drawerLabel: 'Drones',
+          title: 'Fleet',
+          drawerLabel: 'Fleet',
           drawerIcon: ({ color }) => <FontAwesome name="plane" size={20} color={color} />,
         }}
       />
       <Drawer.Screen
         name="staff"
         options={{
-          title: 'Team Members',
-          drawerLabel: 'Staff',
+          title: 'Personnel',
+          drawerLabel: 'Personnel',
           drawerIcon: ({ color }) => <FontAwesome name="users" size={20} color={color} />,
         }}
       />
       <Drawer.Screen
         name="subcontractors"
         options={{
-          title: 'Subcontractors',
-          drawerLabel: 'Subcontractors',
+          title: 'Partners',
+          drawerLabel: 'Partners',
           drawerIcon: ({ color }) => <FontAwesome name="building" size={20} color={color} />,
         }}
       />
@@ -207,8 +208,8 @@ export default function DrawerLayout() {
       <Drawer.Screen
         name="batteries"
         options={{
-          title: 'Battery Inventory',
-          drawerLabel: 'Batteries',
+          title: 'Power Units',
+          drawerLabel: 'Power Units',
           drawerIcon: ({ color }) => <FontAwesome name="bolt" size={20} color={color} />,
         }}
       />
@@ -224,7 +225,7 @@ export default function DrawerLayout() {
         name="flights"
         options={{
           title: 'Flight Logs',
-          drawerLabel: 'Flights',
+          drawerLabel: 'Flight Logs',
           drawerIcon: ({ color }) => <FontAwesome name="send" size={20} color={color} />,
         }}
       />
@@ -234,6 +235,14 @@ export default function DrawerLayout() {
           title: 'Accounts & Reimbursement',
           drawerLabel: 'Accounts',
           drawerIcon: ({ color }) => <FontAwesome name="credit-card" size={20} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="support"
+        options={{
+          title: 'Assistance',
+          drawerLabel: 'Assistance',
+          drawerIcon: ({ color }) => <FontAwesome name="question-circle" size={20} color={color} />,
         }}
       />
       <Drawer.Screen

@@ -40,9 +40,12 @@ export default function AccountsScreen() {
     const [formData, setFormData] = useState({
         name: '',
         amount: '',
+        category: 'Operational', // Default category
         date: new Date().toISOString().split('T')[0],
         billData: ''
     });
+
+    const categories = ['Travel', 'Maintenance', 'Operational', 'Marketing', 'Office', 'Other'];
 
     const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
@@ -103,6 +106,7 @@ export default function AccountsScreen() {
             setFormData({
                 name: '',
                 amount: '',
+                category: 'Operational',
                 date: new Date().toISOString().split('T')[0],
                 billData: ''
             });
@@ -144,7 +148,14 @@ export default function AccountsScreen() {
                     <FontAwesome name="money" size={14} color={theme.primary} />
                 </View>
                 <View style={styles.cardMainInfo}>
-                    <Text style={[styles.cardTitle, { color: theme.text }]}>{item.name}</Text>
+                    <View style={styles.titleRow}>
+                        <Text style={[styles.cardTitle, { color: theme.text }]}>{item.name}</Text>
+                        {item.category && (
+                            <View style={[styles.categoryBadge, { backgroundColor: theme.primary + '10' }]}>
+                                <Text style={[styles.categoryText, { color: theme.primary }]}>{item.category}</Text>
+                            </View>
+                        )}
+                    </View>
                     <Text style={[styles.cardDate, { color: theme.textSecondary }]}>{new Date(item.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}</Text>
                 </View>
                 <View style={[
@@ -210,13 +221,13 @@ export default function AccountsScreen() {
                         style={[styles.tab, activeTab === 'my' && { backgroundColor: theme.primary + '10', borderColor: theme.primary + '30' }]}
                         onPress={() => setActiveTab('my')}
                     >
-                        <Text style={[styles.tabText, { color: activeTab === 'my' ? theme.primary : theme.textSecondary }]}>PERSONAL</Text>
+                        <Text style={[styles.tabText, { color: activeTab === 'my' ? theme.primary : theme.textSecondary }]}>PERSONNEL LEDGER</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.tab, activeTab === 'admin' && { backgroundColor: theme.primary + '10', borderColor: theme.primary + '30' }]}
                         onPress={() => setActiveTab('admin')}
                     >
-                        <Text style={[styles.tabText, { color: activeTab === 'admin' ? theme.primary : theme.textSecondary }]}>ORGANIZATION</Text>
+                        <Text style={[styles.tabText, { color: activeTab === 'admin' ? theme.primary : theme.textSecondary }]}>ADMINISTRATIVE HUB</Text>
                     </TouchableOpacity>
                 </View>
             )}
@@ -264,14 +275,14 @@ export default function AccountsScreen() {
                     >
                         <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
                             <View style={styles.modalHeader}>
-                                <Text style={[styles.modalTitle, { color: theme.text }]}>File Claim</Text>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>Expense Declaration</Text>
                                 <TouchableOpacity onPress={() => setShowForm(false)} style={[styles.closeBtn, { backgroundColor: theme.inputBackground }]}>
                                     <FontAwesome name="times" size={16} color={theme.textSecondary} />
                                 </TouchableOpacity>
                             </View>
 
                             <ScrollView style={styles.formContent} showsVerticalScrollIndicator={false}>
-                                <Text style={[styles.label, { color: theme.textSecondary }]}>CLAIM DESCRIPTION</Text>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>DESCRIPTION</Text>
                                 <TextInput
                                     style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
                                     placeholder="e.g. Flight Mission Logistics"
@@ -290,13 +301,35 @@ export default function AccountsScreen() {
                                     onChangeText={text => setFormData({ ...formData, amount: text })}
                                 />
 
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>CATEGORY</Text>
+                                <View style={styles.categoryContainer}>
+                                    {categories.map(cat => (
+                                        <TouchableOpacity
+                                            key={cat}
+                                            style={[
+                                                styles.catOption,
+                                                {
+                                                    backgroundColor: formData.category === cat ? theme.primary : theme.inputBackground,
+                                                    borderColor: formData.category === cat ? theme.primary : theme.border
+                                                }
+                                            ]}
+                                            onPress={() => setFormData({ ...formData, category: cat })}
+                                        >
+                                            <Text style={[
+                                                styles.catOptionText,
+                                                { color: formData.category === cat ? '#fff' : theme.textSecondary }
+                                            ]}>{cat}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
                                 <TouchableOpacity
                                     style={[styles.uploadBtn, { backgroundColor: (formData.billData ? theme.success : theme.accent) + '10', borderColor: (formData.billData ? theme.success : theme.accent) + '50' }]}
                                     onPress={handlePickDocument}
                                 >
                                     <FontAwesome name={formData.billData ? "check-circle" : "paperclip"} size={18} color={formData.billData ? theme.success : theme.accent} />
                                     <Text style={[styles.uploadBtnText, { color: formData.billData ? theme.success : theme.accent }]}>
-                                        {formData.billData ? "Digitized bill ready" : "Attach digitized claim receipt"}
+                                        {formData.billData ? "Documentation attached" : "Attach evidentiary documentation"}
                                     </Text>
                                 </TouchableOpacity>
 
@@ -308,7 +341,7 @@ export default function AccountsScreen() {
                                     {submitting ? (
                                         <ActivityIndicator color="#fff" />
                                     ) : (
-                                        <Text style={styles.submitBtnText}>SUBMIT LOG FOR REVIEW</Text>
+                                        <Text style={styles.submitBtnText}>FINALIZE DECLARATION</Text>
                                     )}
                                 </TouchableOpacity>
                             </ScrollView>
@@ -433,4 +466,10 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
     },
     statusBtnText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
+    titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
+    categoryBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+    categoryText: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase' },
+    categoryContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+    catOption: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5 },
+    catOptionText: { fontSize: 12, fontWeight: '700' },
 });

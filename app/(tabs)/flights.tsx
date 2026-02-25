@@ -130,7 +130,7 @@ export default function FlightsScreen() {
                 ListHeaderComponent={
                     <View style={styles.listHeader}>
                         <Text style={[styles.headerTitle, { color: theme.textSecondary }]}>
-                            {flightLogs.length} LOGGED MISSIONS
+                            {flightLogs.length} FLIGHT LOGS RECORDED
                         </Text>
                     </View>
                 }
@@ -139,7 +139,7 @@ export default function FlightsScreen() {
                         <View style={[styles.emptyIconContainer, { backgroundColor: theme.cardBackground }]}>
                             <FontAwesome name="paper-plane" size={48} color={theme.border} />
                         </View>
-                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Flight Data</Text>
+                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Flight Logs</Text>
                         <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
                             Your flight telemetry and logs will be indexed here after mission completion.
                         </Text>

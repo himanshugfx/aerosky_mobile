@@ -253,7 +253,7 @@ export const reimbursementsApi = {
         return response.data;
     },
 
-    submit: async (data: { name: string; amount: number; date: string; billData: string }) => {
+    submit: async (data: { name: string; amount: number; date: string; billData: string; category: string }) => {
         const response = await apiClient.post('/api/reimbursements', data);
         return response.data;
     },

@@ -51,15 +51,15 @@ const SubcontractorCard = ({
 
         <View style={styles.detailsGrid}>
             <View style={styles.detailItem}>
-                <Text style={styles.label}>Contact Person</Text>
+                <Text style={styles.label}>Accountable Liaison</Text>
                 <Text style={styles.value}>{sub.contactPerson || 'N/A'}</Text>
             </View>
             <View style={styles.detailItem}>
-                <Text style={styles.label}>Phone</Text>
+                <Text style={styles.label}>Telecom</Text>
                 <Text style={styles.value}>{sub.contactPhone || 'N/A'}</Text>
             </View>
             <View style={styles.detailItemFull}>
-                <Text style={styles.label}>Email</Text>
+                <Text style={styles.label}>Telecom Link</Text>
                 <Text style={styles.value}>{sub.contactEmail || 'N/A'}</Text>
             </View>
             <View style={styles.detailItemFull}>
@@ -95,7 +95,7 @@ export default function SubcontractorsScreen() {
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert('Delete Subcontractor', 'Are you sure you want to delete this subcontractor?', [
+        Alert.alert('Terminate Partnership', 'Dissolve partnership with this entity? This action is irreversible.', [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Delete',
@@ -134,14 +134,14 @@ export default function SubcontractorsScreen() {
                 }
                 ListHeaderComponent={
                     <View style={styles.listHeader}>
-                        <Text style={styles.headerTitle}>{subcontractors.length} Subcontractors</Text>
+                        <Text style={styles.headerTitle}>{subcontractors.length} PARTNER ENTITIES</Text>
                     </View>
                 }
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
                         <FontAwesome name="building" size={64} color={Colors.dark.border} />
-                        <Text style={styles.emptyTitle}>No Subcontractors</Text>
-                        <Text style={styles.emptySubtitle}>Start by adding your first partner</Text>
+                        <Text style={styles.emptyTitle}>Pristine Network Registry</Text>
+                        <Text style={styles.emptySubtitle}>No subcontractors have been registered in the system network yet.</Text>
                     </View>
                 }
             />

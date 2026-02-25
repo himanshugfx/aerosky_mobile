@@ -109,7 +109,7 @@ const BusinessDashboard = ({
       {/* Header Stats */}
       <View style={[styles.headerStats, { backgroundColor: theme.cardBackground, borderColor: theme.border, justifyContent: 'center' }]}>
         <View style={styles.mainStat}>
-          <Text style={[styles.mainStatLabel, { color: theme.textSecondary }]}>Active Drones</Text>
+          <Text style={[styles.mainStatLabel, { color: theme.textSecondary }]}>Active Fleet</Text>
           <Text style={[styles.mainStatValue, { color: theme.text }]}>{drones.length}</Text>
         </View>
       </View>
@@ -118,14 +118,14 @@ const BusinessDashboard = ({
       <Text style={[styles.sectionTitle, { color: theme.text }]}>Business Overview</Text>
       <View style={styles.cardsGrid}>
         <DashboardCard
-          title="Drones"
+          title="Fleet"
           count={drones.length}
           icon="fighter-jet"
           color={theme.primary}
           onPress={() => router.push('/drones')}
         />
         <DashboardCard
-          title="Team"
+          title="Personnel"
           count={teamMembers.length}
           icon="users"
           color={theme.success}
@@ -139,7 +139,7 @@ const BusinessDashboard = ({
           onPress={() => router.push('/orders')}
         />
         <DashboardCard
-          title="Batteries"
+          title="Power Units"
           count={batteries.length}
           icon="bolt"
           color={theme.warning}
@@ -150,15 +150,15 @@ const BusinessDashboard = ({
       {/* Quick Actions */}
       <Text style={[styles.sectionTitle, { color: theme.text, marginTop: Spacing.lg }]}>Operations</Text>
       <View style={styles.quickActionsRow}>
-        <QuickAction title="Add Drone" icon="plus-circle" onPress={() => router.push('/drones')} color={theme.primary} />
+        <QuickAction title="Add Fleet" icon="plus-circle" onPress={() => router.push('/drones')} color={theme.primary} />
         <QuickAction title="New Order" icon="file-text" onPress={() => router.push('/orders')} color="#F97316" />
-        <QuickAction title="Add Staff" icon="user-plus" onPress={() => router.push('/staff')} color={theme.success} />
-        <QuickAction title="Flights" icon="send" onPress={() => router.push('/flights')} color={theme.accent} />
+        <QuickAction title="Add Personnel" icon="user-plus" onPress={() => router.push('/staff')} color={theme.success} />
+        <QuickAction title="Flight Logs" icon="send" onPress={() => router.push('/flights')} color={theme.accent} />
       </View>
 
       {/* Recent Activity */}
       <View style={styles.sectionHeaderRow}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Drones</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Fleet</Text>
         <TouchableOpacity onPress={() => router.push('/drones')}>
           <Text style={[styles.seeAllText, { color: theme.primary }]}>View All</Text>
         </TouchableOpacity>

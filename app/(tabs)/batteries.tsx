@@ -39,7 +39,7 @@ const BatteryCard = ({
                 </View>
                 <View style={styles.badgeContainer}>
                     <View style={[styles.typeBadge, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
-                        <Text style={[styles.typeText, { color: theme.textSecondary }]}>BATTERY PAIR</Text>
+                        <Text style={[styles.typeText, { color: theme.textSecondary }]}>POWER UNIT PAIR</Text>
                     </View>
                     <View style={[styles.statusDot, { backgroundColor: theme.success }]} />
                     <Text style={[styles.statusText, { color: theme.success }]}>Active</Text>
@@ -51,11 +51,11 @@ const BatteryCard = ({
 
         <View style={styles.cardDetails}>
             <View style={styles.detailItem}>
-                <Text style={[styles.label, { color: theme.textSecondary }]}>Battery A</Text>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>Unit A</Text>
                 <Text style={[styles.value, { color: theme.text }]}>{battery.batteryNumberA || 'N/A'}</Text>
             </View>
             <View style={styles.detailItem}>
-                <Text style={[styles.label, { color: theme.textSecondary }]}>Battery B</Text>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>Unit B</Text>
                 <Text style={[styles.value, { color: theme.text }]}>{battery.batteryNumberB || 'N/A'}</Text>
             </View>
             <View style={styles.detailItem}>
@@ -92,7 +92,7 @@ export default function BatteriesScreen() {
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert('Remove Battery', 'Are you sure you want to remove this battery pair from tracking?', [
+        Alert.alert('Deregister Power Unit', 'Remove this power unit pair from the tracking registry? This action is irreversible.', [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Remove',
@@ -125,7 +125,7 @@ export default function BatteriesScreen() {
                 ListHeaderComponent={
                     <View style={styles.listHeader}>
                         <Text style={[styles.headerTitle, { color: theme.textSecondary }]}>
-                            {batteries.length} BATTERY PAIRS REGISTERED
+                            {batteries.length} POWER UNITS REGISTERED
                         </Text>
                         <TouchableOpacity style={styles.headerAction}>
                             <FontAwesome name="sort-amount-desc" size={14} color={theme.primary} />
@@ -137,15 +137,15 @@ export default function BatteriesScreen() {
                         <View style={[styles.emptyIconContainer, { backgroundColor: theme.cardBackground }]}>
                             <FontAwesome name="bolt" size={48} color={theme.border} />
                         </View>
-                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Batteries</Text>
+                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Power Units</Text>
                         <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-                            Register your battery pairs to begin tracking and compliance management.
+                            Register your power unit pairs to begin tracking and compliance management.
                         </Text>
                         <TouchableOpacity
                             style={[styles.emptyAddBtn, { backgroundColor: theme.primary }]}
                             onPress={() => setIsAddModalVisible(true)}
                         >
-                            <Text style={styles.emptyAddBtnText}>Add Battery Pair</Text>
+                            <Text style={styles.emptyAddBtnText}>Add Power Unit Pair</Text>
                         </TouchableOpacity>
                     </View>
                 }

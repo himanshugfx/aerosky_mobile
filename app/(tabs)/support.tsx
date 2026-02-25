@@ -36,7 +36,7 @@ interface SupportTicket {
 
 const statusColors: Record<string, string> = {
     OPEN: '#EF4444',
-    IN_PROGRESS: '#F97316',
+    IN_PROGRESS: '#ea580c',
     RESOLVED: '#10B981',
     CLOSED: '#6B7280'
 };
@@ -194,10 +194,10 @@ export default function SupportScreen() {
             <View style={styles.header}>
                 <View>
                     <Text style={[styles.title, { color: theme.text }]}>
-                        {isSuperAdmin ? 'Support Center' : 'Help & Support'}
+                        {isSuperAdmin ? 'Support Center' : 'Organization Assistance'}
                     </Text>
                     <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                        {isSuperAdmin ? 'Platform-wide tickets' : 'Get assistance with your operations'}
+                        {isSuperAdmin ? 'Platform-wide tickets' : 'Direct access to AeroSky Super Admins'}
                     </Text>
                 </View>
                 {!isSuperAdmin && (
@@ -206,7 +206,7 @@ export default function SupportScreen() {
                         onPress={() => setModalVisible(true)}
                     >
                         <FontAwesome name="plus" size={14} color="#fff" />
-                        <Text style={styles.addButtonText}>New Ticket</Text>
+                        <Text style={styles.addButtonText}>Initialize Request</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -224,11 +224,11 @@ export default function SupportScreen() {
                         <View style={[styles.emptyIconBox, { backgroundColor: theme.cardBackground }]}>
                             <FontAwesome name="ticket" size={40} color={theme.border} />
                         </View>
-                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Tickets Found</Text>
+                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Active Threads</Text>
                         <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                             {isSuperAdmin
-                                ? 'No support tickets from organizations yet'
-                                : 'Need help? Create a support ticket and our team will assist you.'
+                                ? 'No support records detected in the vault'
+                                : 'Initialize a secure chat thread for direct technical assistance.'
                             }
                         </Text>
                     </View>
@@ -246,8 +246,8 @@ export default function SupportScreen() {
                     <View style={[styles.modalContent, { backgroundColor: theme.background, borderColor: theme.border }]}>
                         <View style={styles.modalHeader}>
                             <View>
-                                <Text style={[styles.modalTitle, { color: theme.text }]}>Contact Support</Text>
-                                <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>We'll respond as soon as possible</Text>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>Secure Chat Link</Text>
+                                <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>Direct communication with Super Admins</Text>
                             </View>
                             <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.closeBtn, { backgroundColor: theme.cardBackground }]}>
                                 <FontAwesome name="times" size={18} color={theme.textSecondary} />
@@ -315,7 +315,7 @@ export default function SupportScreen() {
                             {isSubmitting ? (
                                 <ActivityIndicator size="small" color="#fff" />
                             ) : (
-                                <Text style={styles.submitButtonText}>Submit Support Ticket</Text>
+                                <Text style={styles.submitButtonText}>Start Secure Chat</Text>
                             )}
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>

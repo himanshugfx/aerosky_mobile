@@ -1,0 +1,12 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Shield -->
+  <path d="M512 64C512 64 256 128 128 128V448C128 640 512 896 512 896C512 896 896 640 896 448V128C768 128 512 64 512 64Z" fill="#E2E8F0" stroke="#94A3B8" stroke-width="20"/>
+  
+  <!-- Orange Arrow -->
+  <path d="M512 256L320 448H448V704H576V448H704L512 256Z" fill="#F97316"/>
+  
+  <!-- Paper Plane -->
+  <path d="M512 400L256 600L800 600L512 400Z" fill="white" opacity="0.9"/>
+  <path d="M512 400L512 600L256 600L512 400Z" fill="#F1F5F9"/>
+  <path d="M800 600L512 600L512 700L650 630L800 600Z" fill="#CBD5E1"/>
+</svg>

@@ -135,7 +135,7 @@ export default function OrdersScreen() {
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert('Delete Order', 'Are you sure you want to delete this order?', [
+        Alert.alert('Revoke Order', 'Permanently remove this manufacturing order from the system?', [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Delete',
@@ -187,7 +187,7 @@ export default function OrdersScreen() {
                 }
                 ListHeaderComponent={
                     <View style={styles.listHeader}>
-                        <Text style={[styles.headerTitle, { color: theme.textSecondary }]}>{orders.length} Active Orders</Text>
+                        <Text style={[styles.headerTitle, { color: theme.textSecondary }]}>{orders.length} ACTIVE ORDERS</Text>
                     </View>
                 }
                 ListEmptyComponent={
@@ -195,8 +195,8 @@ export default function OrdersScreen() {
                         <View style={[styles.emptyIconContainer, { backgroundColor: theme.cardBackground }]}>
                             <FontAwesome name="shopping-cart" size={40} color={theme.border} />
                         </View>
-                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Orders Found</Text>
-                        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>Start by adding your first order</Text>
+                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Active Orders</Text>
+                        <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>Manufacturing orders and procurement contracts will appear here.</Text>
                     </View>
                 }
             />

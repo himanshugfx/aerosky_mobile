@@ -1,9 +1,9 @@
 // AeroSky Color Theme
 // Aviation-inspired color palette
 
-const primaryBlue = '#2563EB'; // Vibrant Indigo-Blue
-const darkNavy = '#0F172A'; // Deep Slate Navy
-const accentIndigo = '#6366F1';
+const primaryOrange = '#ea580c'; // Vibrant Orange
+const darkSlate = '#1e293b'; // Deep Slate Grey
+const accentOrange = '#f97316';
 const successEmerald = '#10B981';
 const warningAmber = '#F59E0B';
 const errorRose = '#F43F5E';
@@ -16,9 +16,10 @@ const lightTheme = {
   cardBackground: '#FFFFFF',
 
   // Brand colors
-  primary: primaryBlue,
-  primaryLight: '#60A5FA',
-  accent: accentIndigo,
+  primary: primaryOrange,
+  primaryLight: '#fb923c',
+  accent: accentOrange,
+  sidebar: darkSlate,
 
   // Status colors
   success: successEmerald,
@@ -26,10 +27,10 @@ const lightTheme = {
   error: errorRose,
 
   // UI colors
-  tint: primaryBlue,
+  tint: primaryOrange,
   border: '#E2E8F0',
   tabIconDefault: '#94A3B8',
-  tabIconSelected: primaryBlue,
+  tabIconSelected: primaryOrange,
 
   // Specific UI elements
   inputBackground: '#F1F5F9',

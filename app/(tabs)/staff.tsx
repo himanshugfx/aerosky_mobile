@@ -97,7 +97,7 @@ export default function StaffScreen() {
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert('Remove Member', 'Are you sure you want to remove this team member?', [
+        Alert.alert('Revoke Access', 'Permanently remove this member from the organization?', [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Remove',
@@ -137,7 +137,7 @@ export default function StaffScreen() {
                 ListHeaderComponent={
                     <View style={styles.listHeader}>
                         <Text style={[styles.headerTitle, { color: theme.textSecondary }]}>
-                            {teamMembers.length} TEAM MEMBERS
+                            {teamMembers.length} PERSONNEL
                         </Text>
                     </View>
                 }
@@ -146,15 +146,15 @@ export default function StaffScreen() {
                         <View style={[styles.emptyIconContainer, { backgroundColor: theme.cardBackground }]}>
                             <FontAwesome name="users" size={48} color={theme.border} />
                         </View>
-                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Team Members</Text>
+                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Personnel Found</Text>
                         <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-                            Add your team members to manage personnel and organizational compliance.
+                            Initialize organizational growth by onboarding your first team member.
                         </Text>
                         <TouchableOpacity
                             style={[styles.emptyAddBtn, { backgroundColor: theme.primary }]}
                             onPress={() => { setEditingMember(null); setIsModalVisible(true); }}
                         >
-                            <Text style={styles.emptyAddBtnText}>Add Team Member</Text>
+                            <Text style={styles.emptyAddBtnText}>Onboard Member</Text>
                         </TouchableOpacity>
                     </View>
                 }
