@@ -1,5 +1,7 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 import { Order } from './types';
 
 export const generateOrderPDF = async (order: Order) => {
@@ -81,7 +83,7 @@ export const generateOrderPDF = async (order: Order) => {
     </head>
     <body>
         <div class="header">
-            <h1>AEROSKY AVIATION</h1>
+            <h1>AEROSYS AVIATION</h1>
             <p>MANUFACTURING ORDER DETAILS - ${order.contractNumber}</p>
         </div>
 
@@ -131,7 +133,7 @@ export const generateOrderPDF = async (order: Order) => {
         ` : ''}
 
         <div class="footer">
-            AeroSky Aviation India - Confidential Document - System Generated on ${new Date().toLocaleString()}
+            Aerosys Aviation India - Confidential Document - System Generated on ${new Date().toLocaleString()}
         </div>
     </body>
     </html>
@@ -139,7 +141,18 @@ export const generateOrderPDF = async (order: Order) => {
 
     try {
         const { uri } = await Print.printToFileAsync({ html: htmlContent });
-        await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+
+        // Move to a named file so it opens properly
+        const pdfName = `Order_${order.contractNumber}_${Date.now()}.pdf`;
+        const newUri = `${FileSystem.cacheDirectory}${pdfName}`;
+        await FileSystem.moveAsync({ from: uri, to: newUri });
+
+        // Share/open the PDF
+        await Sharing.shareAsync(newUri, {
+            UTI: '.pdf',
+            mimeType: 'application/pdf',
+            dialogTitle: `Order ${order.contractNumber}`,
+        });
     } catch (error) {
         console.error('PDF Generation Error:', error);
         throw error;

@@ -2,6 +2,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     Modal,
     ScrollView,
     StyleSheet,
@@ -10,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import * as Location from 'expo-location';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../constants/Colors';
 import { useComplianceStore } from '../lib/store';
 import type { FlightLog } from '../lib/types';
@@ -63,37 +65,43 @@ export default function AddFlightLogModal({ visible, onClose, onSubmit }: AddFli
 
     const [fetchingLocation, setFetchingLocation] = useState(false);
 
-    const handleFetchLocation = () => {
+    const handleFetchLocation = async () => {
         setFetchingLocation(true);
-        // Fallback to manual for now if navigator.geolocation is unavailable
-        if (typeof navigator !== 'undefined' && navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    const { latitude, longitude } = position.coords;
-                    const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission Required', 'Location permission is needed to fetch your position.');
+                setFetchingLocation(false);
+                return;
+            }
 
-                    try {
-                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-                        const data = await res.json();
-                        setFormData(prev => ({
-                            ...prev,
-                            locationCoords: coords,
-                            locationName: data.display_name || coords
-                        }));
-                    } catch (error) {
-                        setFormData(prev => ({ ...prev, locationCoords: coords, locationName: coords }));
-                    } finally {
-                        setFetchingLocation(false);
-                    }
-                },
-                () => {
-                    setFetchingLocation(false);
-                    alert('Could not fetch location automatically.');
+            const loc = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.High,
+            });
+
+            const { latitude, longitude } = loc.coords;
+            const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+
+            try {
+                const addresses = await Location.reverseGeocodeAsync({ latitude, longitude });
+                if (addresses.length > 0) {
+                    const addr = addresses[0];
+                    const parts = [addr.name, addr.street, addr.city, addr.region, addr.postalCode].filter(Boolean);
+                    setFormData(prev => ({
+                        ...prev,
+                        locationCoords: coords,
+                        locationName: parts.join(', ') || coords
+                    }));
+                } else {
+                    setFormData(prev => ({ ...prev, locationCoords: coords, locationName: coords }));
                 }
-            );
-        } else {
+            } catch {
+                setFormData(prev => ({ ...prev, locationCoords: coords, locationName: coords }));
+            }
+        } catch (error: any) {
+            Alert.alert('Location Error', error.message || 'Could not fetch location.');
+        } finally {
             setFetchingLocation(false);
-            alert('Location services not available.');
         }
     };
 

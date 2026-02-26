@@ -16,9 +16,11 @@ import {
     Modal,
     useColorScheme,
     Platform,
-    KeyboardAvoidingView
+    KeyboardAvoidingView,
+    ActionSheetIOS
 } from 'react-native';
-import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { reimbursementsApi } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
@@ -37,17 +39,26 @@ export default function AccountsScreen() {
     const [submitting, setSubmitting] = useState(false);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-    const [formData, setFormData] = useState({
+
+    const getEmptyForm = () => ({
         name: '',
         amount: '',
-        category: 'Operational', // Default category
+        category: 'Operational',
         date: new Date().toISOString().split('T')[0],
-        billData: ''
+        billData: '',
+
     });
+
+    const [formData, setFormData] = useState(getEmptyForm());
 
     const categories = ['Travel', 'Maintenance', 'Operational', 'Marketing', 'Office', 'Other'];
 
     const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+
+    // Tab-specific labels
+    const isAdminTab = activeTab === 'admin';
+    const modalTitle = isAdminTab ? 'Record Expense' : 'File Reimbursement';
+    const submitLabel = isAdminTab ? 'RECORD EXPENSE' : 'SUBMIT REIMBURSEMENT';
 
     const fetchReimbursements = async () => {
         try {
@@ -71,25 +82,86 @@ export default function AccountsScreen() {
         setRefreshing(false);
     };
 
-    const handlePickDocument = async () => {
-        try {
-            const result = await DocumentPicker.getDocumentAsync({
-                type: ['image/*', 'application/pdf'],
-                copyToCacheDirectory: true
-            });
+    // Open form — always clear fields first
+    const openForm = () => {
+        setFormData(getEmptyForm());
+        setShowForm(true);
+    };
 
-            if (!result.canceled) {
-                setFormData(prev => ({ ...prev, billData: 'data:image/png;base64,iVBORw0KGgo...' }));
-                Alert.alert('Success', 'Proof of expenditure successfully attached.');
-            }
-        } catch (err) {
-            console.error('Picker error:', err);
+    // Camera + Gallery picker with ActionSheet
+    const handlePickImage = () => {
+        if (Platform.OS === 'ios') {
+            ActionSheetIOS.showActionSheetWithOptions(
+                {
+                    options: ['Cancel', 'Take Photo', 'Choose from Gallery'],
+                    cancelButtonIndex: 0,
+                },
+                (buttonIndex) => {
+                    if (buttonIndex === 1) launchCamera();
+                    else if (buttonIndex === 2) launchGallery();
+                }
+            );
+        } else {
+            // Android: show Alert-based ActionSheet
+            Alert.alert(
+                'Attach Receipt',
+                'Choose how to attach your bill',
+                [
+                    { text: 'Take Photo', onPress: launchCamera },
+                    { text: 'Choose from Gallery', onPress: launchGallery },
+                    { text: 'Cancel', style: 'cancel' },
+                ]
+            );
         }
     };
 
+    const launchCamera = async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Required', 'Camera permission is needed to take photos.');
+            return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.7,
+            base64: true,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            const base64 = result.assets[0].base64;
+            setFormData(prev => ({ ...prev, billData: `data:image/jpeg;base64,${base64}` }));
+            Alert.alert('Success', 'Photo captured and attached.');
+        }
+    };
+
+    const launchGallery = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Required', 'Gallery permission is needed to select images.');
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.7,
+            base64: true,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            const base64 = result.assets[0].base64;
+            setFormData(prev => ({ ...prev, billData: `data:image/jpeg;base64,${base64}` }));
+            Alert.alert('Success', 'Image selected and attached.');
+        }
+    };
+
+
+
     const handleSubmit = async () => {
         if (!formData.name || !formData.amount || !formData.billData) {
-            Alert.alert('Required Information', 'Description, amount, and digitized bill are required.');
+            Alert.alert('Required Information', 'Description, amount, and bill attachment are required.');
             return;
         }
 
@@ -101,15 +173,12 @@ export default function AccountsScreen() {
         setSubmitting(true);
         try {
             await reimbursementsApi.submit(formData as any);
-            Alert.alert('Filing Successful', 'Your reimbursement request has been logged for review.');
+            Alert.alert('Filing Successful', isAdminTab
+                ? 'Expense has been recorded successfully.'
+                : 'Your reimbursement request has been logged for review.'
+            );
             setShowForm(false);
-            setFormData({
-                name: '',
-                amount: '',
-                category: 'Operational',
-                date: new Date().toISOString().split('T')[0],
-                billData: ''
-            });
+            setFormData(getEmptyForm());
             fetchReimbursements();
         } catch (error: any) {
             const errorData = error.response?.data;
@@ -262,7 +331,7 @@ export default function AccountsScreen() {
 
             <TouchableOpacity
                 style={[styles.fab, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
-                onPress={() => setShowForm(true)}
+                onPress={openForm}
             >
                 <FontAwesome name="plus" size={24} color="#fff" />
             </TouchableOpacity>
@@ -275,7 +344,7 @@ export default function AccountsScreen() {
                     >
                         <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
                             <View style={styles.modalHeader}>
-                                <Text style={[styles.modalTitle, { color: theme.text }]}>Expense Declaration</Text>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>{modalTitle}</Text>
                                 <TouchableOpacity onPress={() => setShowForm(false)} style={[styles.closeBtn, { backgroundColor: theme.inputBackground }]}>
                                     <FontAwesome name="times" size={16} color={theme.textSecondary} />
                                 </TouchableOpacity>
@@ -323,15 +392,18 @@ export default function AccountsScreen() {
                                     ))}
                                 </View>
 
+                                {/* Camera + Gallery Picker */}
                                 <TouchableOpacity
                                     style={[styles.uploadBtn, { backgroundColor: (formData.billData ? theme.success : theme.accent) + '10', borderColor: (formData.billData ? theme.success : theme.accent) + '50' }]}
-                                    onPress={handlePickDocument}
+                                    onPress={handlePickImage}
                                 >
-                                    <FontAwesome name={formData.billData ? "check-circle" : "paperclip"} size={18} color={formData.billData ? theme.success : theme.accent} />
+                                    <FontAwesome name={formData.billData ? "check-circle" : "camera"} size={18} color={formData.billData ? theme.success : theme.accent} />
                                     <Text style={[styles.uploadBtnText, { color: formData.billData ? theme.success : theme.accent }]}>
-                                        {formData.billData ? "Documentation attached" : "Attach evidentiary documentation"}
+                                        {formData.billData ? "Receipt attached" : "Capture or select receipt"}
                                     </Text>
                                 </TouchableOpacity>
+
+
 
                                 <TouchableOpacity
                                     style={[styles.submitBtn, { backgroundColor: theme.primary }, submitting && styles.disabledBtn]}
@@ -341,7 +413,7 @@ export default function AccountsScreen() {
                                     {submitting ? (
                                         <ActivityIndicator color="#fff" />
                                     ) : (
-                                        <Text style={styles.submitBtnText}>FINALIZE DECLARATION</Text>
+                                        <Text style={styles.submitBtnText}>{submitLabel}</Text>
                                     )}
                                 </TouchableOpacity>
                             </ScrollView>
@@ -443,10 +515,11 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         borderWidth: 1.5,
         borderStyle: 'dashed',
-        marginVertical: 12,
+        marginVertical: 8,
         gap: 12,
     },
-    uploadBtnText: { fontSize: 14, fontWeight: '700' },
+
+    uploadBtnText: { fontSize: 14, fontWeight: '700', flexShrink: 1 },
     submitBtn: { padding: 18, borderRadius: 18, alignItems: 'center', marginTop: 12, shadowOpacity: 0.2 },
     disabledBtn: { opacity: 0.5 },
     submitBtnText: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 1 },
