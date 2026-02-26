@@ -15,36 +15,32 @@ import {
 } from 'react-native';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../constants/Colors';
 
-interface AddBatteryModalProps {
+interface AddDroneModalProps {
     visible: boolean;
     onClose: () => void;
-    onSubmit: (battery: any) => Promise<void>;
+    onSubmit: (drone: any) => Promise<void>;
     initialData?: any;
 }
 
-export default function AddBatteryModal({ visible, onClose, onSubmit, initialData }: AddBatteryModalProps) {
-    const [pairNumber, setPairNumber] = useState(initialData?.batteryNumberA?.replace(/[A-Z]/g, '') || '');
-    const [ratedCapacity, setRatedCapacity] = useState(initialData?.ratedCapacity || '');
+export default function AddDroneModal({ visible, onClose, onSubmit, initialData }: AddDroneModalProps) {
+    const [modelName, setModelName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const colorScheme = useColorScheme();
     const theme = Colors[colorScheme ?? 'dark'];
 
+    // Clear fields every time the modal opens
     useEffect(() => {
         if (visible) {
-            setPairNumber(initialData?.batteryNumberA?.replace(/[A-Z]/g, '') || '');
-            setRatedCapacity(initialData?.ratedCapacity || '');
+            setModelName(initialData?.modelName || '');
         }
     }, [visible, initialData]);
 
     const handleSubmit = async () => {
-        if (!pairNumber.trim()) return;
+        if (!modelName.trim()) return;
         setIsLoading(true);
         try {
             await onSubmit({
-                model: `Pair ${pairNumber.trim()}`,
-                ratedCapacity: ratedCapacity.trim(),
-                batteryNumberA: `${pairNumber.trim()}A`,
-                batteryNumberB: `${pairNumber.trim()}B`,
+                modelName: modelName.trim(),
             });
             onClose();
         } catch (error) {
@@ -65,10 +61,10 @@ export default function AddBatteryModal({ visible, onClose, onSubmit, initialDat
                         <View style={styles.header}>
                             <View>
                                 <Text style={[styles.title, { color: theme.text }]}>
-                                    {initialData ? 'Edit Battery Pair' : 'New Battery Pair'}
+                                    {initialData ? 'Edit Aircraft' : 'Register Aircraft'}
                                 </Text>
                                 <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                                    Configure aircraft power systems
+                                    Add a new UAV to fleet registry
                                 </Text>
                             </View>
                             <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: theme.cardBackground }]}>
@@ -78,24 +74,12 @@ export default function AddBatteryModal({ visible, onClose, onSubmit, initialDat
 
                         <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
                             <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: theme.textSecondary }]}>Pair ID / Number *</Text>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>Aircraft Model Name *</Text>
                                 <TextInput
                                     style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
-                                    value={pairNumber}
-                                    onChangeText={setPairNumber}
-                                    placeholder="e.g. 01"
-                                    keyboardType="numeric"
-                                    placeholderTextColor={theme.textSecondary + '60'}
-                                />
-                            </View>
-
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: theme.textSecondary }]}>Rated Capacity *</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
-                                    value={ratedCapacity}
-                                    onChangeText={setRatedCapacity}
-                                    placeholder="e.g. 22000 mAh"
+                                    value={modelName}
+                                    onChangeText={setModelName}
+                                    placeholder="e.g. DJI Matrice 300 RTK"
                                     placeholderTextColor={theme.textSecondary + '60'}
                                 />
                             </View>
@@ -104,16 +88,16 @@ export default function AddBatteryModal({ visible, onClose, onSubmit, initialDat
                                 style={[
                                     styles.submitButton,
                                     { backgroundColor: theme.primary, shadowColor: theme.primary },
-                                    (!pairNumber.trim() || isLoading) && styles.disabledButton
+                                    (!modelName.trim() || isLoading) && styles.disabledButton
                                 ]}
                                 onPress={handleSubmit}
-                                disabled={isLoading || !pairNumber.trim()}
+                                disabled={isLoading || !modelName.trim()}
                             >
                                 {isLoading ? (
                                     <ActivityIndicator size="small" color="#fff" />
                                 ) : (
                                     <Text style={styles.submitButtonText}>
-                                        {initialData ? 'Update System' : 'Register Battery Pair'}
+                                        {initialData ? 'Update Aircraft' : 'Register Aircraft'}
                                     </Text>
                                 )}
                             </TouchableOpacity>
