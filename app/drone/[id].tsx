@@ -14,6 +14,7 @@ import {
     View,
     useColorScheme
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import Colors, { BorderRadius, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
 
@@ -130,6 +131,21 @@ export default function DroneDetailScreen() {
         Alert.alert('Success', 'Record added');
     };
 
+    const pickAndUpload = async (type: string, multiple = false) => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsMultipleSelection: multiple,
+            base64: true,
+            quality: 0.5,
+        });
+
+        if (!result.canceled && result.assets.length > 0) {
+            const files = result.assets.map(asset => `data:image/jpeg;base64,${asset.base64}`);
+            await updateDroneUploads(drone.id, type, multiple ? files : files[0]);
+            Alert.alert('Success', 'File uploaded successfully');
+        }
+    };
+
     const deleteRecurring = async (key: string, index: number) => {
         if (!droneData) return;
         const current = (droneData as any).recurringData?.[key] || [];
@@ -216,7 +232,10 @@ export default function DroneDetailScreen() {
 
                         {/* 2. Training Procedure Manual */}
                         <AccordionItem title="2. Training Procedure Manual" description="Upload training documentation" icon="file-text" isComplete={checks.trainingManual}>
-                            <View style={styles.uploadBox}><FontAwesome name="cloud-upload" size={32} color={Colors.dark.textSecondary} /><Text style={styles.uploadText}>{uploads.trainingManual ? 'Manual Uploaded ✓' : 'Upload Training Manual (PDF)'}</Text></View>
+                            <TouchableOpacity style={styles.uploadBox} onPress={() => pickAndUpload('training_manual')}>
+                                <FontAwesome name="cloud-upload" size={32} color={Colors.dark.textSecondary} />
+                                <Text style={styles.uploadText}>{uploads.trainingManual ? 'Manual Uploaded ✓' : 'Upload Training Manual (PDF)'}</Text>
+                            </TouchableOpacity>
                         </AccordionItem>
 
                         {/* 3. Nomination of Leadership */}
@@ -234,19 +253,27 @@ export default function DroneDetailScreen() {
                         {/* 4. Infrastructure Setup */}
                         <AccordionItem title="4. Infrastructure Setup" description="Upload images of physical facilities" icon="building" isComplete={checks.infrastructure}>
                             <Text style={styles.sectionLabel}>Manufacturing Facility</Text>
-                            <View style={styles.uploadBox}><Text style={styles.uploadText}>Upload Images</Text></View>
+                            <TouchableOpacity style={styles.uploadBox} onPress={() => pickAndUpload('infrastructure_manufacturing', true)}>
+                                <Text style={styles.uploadText}>Upload Images</Text>
+                            </TouchableOpacity>
                             <Text style={[styles.sectionLabel, { marginTop: 12 }]}>Testing Facility</Text>
-                            <View style={styles.uploadBox}><Text style={styles.uploadText}>Upload Images</Text></View>
+                            <TouchableOpacity style={styles.uploadBox} onPress={() => pickAndUpload('infrastructure_testing', true)}>
+                                <Text style={styles.uploadText}>Upload Images</Text>
+                            </TouchableOpacity>
                         </AccordionItem>
 
                         {/* 5. Regulatory Display */}
                         <AccordionItem title="5. Regulatory Display" description="TC display & fireproof plates" icon="shield" isComplete={checks.regulatory}>
-                            <View style={styles.uploadBox}><Text style={styles.uploadText}>Upload TC Display Photos</Text></View>
+                            <TouchableOpacity style={styles.uploadBox} onPress={() => pickAndUpload('regulatory_display', true)}>
+                                <Text style={styles.uploadText}>Upload TC Display Photos</Text>
+                            </TouchableOpacity>
                         </AccordionItem>
 
                         {/* 6. System Design */}
                         <AccordionItem title="6. System Design" description="Control and supervision procedures" icon="cogs" isComplete={checks.systemDesign}>
-                            <View style={styles.uploadBox}><Text style={styles.uploadText}>{uploads.systemDesign ? 'Document Uploaded ✓' : 'Upload System Design (PDF)'}</Text></View>
+                            <TouchableOpacity style={styles.uploadBox} onPress={() => pickAndUpload('system_design')}>
+                                <Text style={styles.uploadText}>{uploads.systemDesign ? 'Document Uploaded ✓' : 'Upload System Design (PDF)'}</Text>
+                            </TouchableOpacity>
                         </AccordionItem>
 
                         {/* 7. Sub-contractors Agreement */}
@@ -262,7 +289,9 @@ export default function DroneDetailScreen() {
 
                         {/* 8. Hardware Security */}
                         <AccordionItem title="8. Hardware Security" description="Tamperproof requirements" icon="lock" isComplete={checks.hardware}>
-                            <View style={styles.uploadBox}><Text style={styles.uploadText}>Upload Tamperproof Demo Images</Text></View>
+                            <TouchableOpacity style={styles.uploadBox} onPress={() => pickAndUpload('hardware_security', true)}>
+                                <Text style={styles.uploadText}>Upload Tamperproof Demo Images</Text>
+                            </TouchableOpacity>
                         </AccordionItem>
 
                         {/* 9. Web Portal */}
@@ -420,25 +449,25 @@ const styles = StyleSheet.create({
     scrollContent: { flex: 1 },
     scrollInside: { padding: 16, paddingBottom: 60 },
     section: { gap: 16 },
-    accordionContainer: { borderRadius: 24, overflow: 'hidden', borderWidth: 1.5, marginBottom: 16 },
-    accordionHeader: { flexDirection: 'row', alignItems: 'center', padding: 18, gap: 14 },
+    accordionContainer: { borderRadius: 24, overflow: 'hidden', borderWidth: 1.5, marginBottom: 16, borderColor: '#E2E8F0' },
+    accordionHeader: { flexDirection: 'row', alignItems: 'center', padding: 18, gap: 14, backgroundColor: '#FFFFFF' },
     iconBox: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     headerInfo: { flex: 1 },
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    accordionTitle: { fontSize: 15, fontWeight: '800', letterSpacing: -0.3 },
+    accordionTitle: { fontSize: 15, fontWeight: '800', letterSpacing: -0.3, color: '#1E293B' },
     statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
     statusBadgeText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
-    accordionSubtitle: { fontSize: 12, marginTop: 4, fontWeight: '500' },
-    accordionContent: { padding: 18, borderTopWidth: 1.5 },
+    accordionSubtitle: { fontSize: 12, marginTop: 4, fontWeight: '500', color: '#64748B' },
+    accordionContent: { padding: 18, borderTopWidth: 1.5, borderTopColor: '#E2E8F0', backgroundColor: '#FAFAFA' },
     itemRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, gap: 12, marginBottom: 8, borderWidth: 1 },
     itemIconSmall: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
     itemName: { fontSize: 14, fontWeight: '700' },
     itemRole: { fontSize: 12, fontWeight: '500' },
     itemBadge: { fontSize: 11, fontWeight: '800' },
     linkButton: { marginTop: 12, paddingVertical: 8, alignItems: 'center' },
-    linkButtonText: { fontSize: 14, fontWeight: '700' },
-    uploadBox: { height: 100, borderWidth: 2, borderStyle: 'dashed', borderRadius: 20, alignItems: 'center', justifyContent: 'center', gap: 10 },
-    uploadText: { fontSize: 13, fontWeight: '600' },
+    linkButtonText: { fontSize: 14, fontWeight: '700', color: Colors.dark.primary },
+    uploadBox: { height: 100, borderWidth: 2, borderStyle: 'dashed', borderRadius: 20, alignItems: 'center', justifyContent: 'center', gap: 10, borderColor: '#CBD5E1', backgroundColor: '#F8FAFC' },
+    uploadText: { fontSize: 13, fontWeight: '700', color: '#475569' },
     sectionLabel: { fontSize: 11, fontWeight: '900', marginBottom: 12, letterSpacing: 1.5, textTransform: 'uppercase' },
     managerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
     managerCard: { width: '48%', padding: 14, borderRadius: 18, borderWidth: 1.5 },
@@ -449,8 +478,8 @@ const styles = StyleSheet.create({
     unitUin: { fontSize: 12, fontWeight: '700', marginTop: 2 },
     inputForm: { marginTop: 12, gap: 12, padding: 16, borderRadius: 20, borderWidth: 1, borderStyle: 'dashed' },
     mobileInput: { borderRadius: 14, padding: 14, fontSize: 14, fontWeight: '500', borderWidth: 1.5 },
-    addRecordBtn: { padding: 16, borderRadius: 16, alignItems: 'center', marginTop: 8 },
-    addRecordBtnText: { color: '#fff', fontSize: 14, fontWeight: '900', letterSpacing: 1 },
+    addRecordBtn: { padding: 16, borderRadius: 16, alignItems: 'center', marginTop: 8, backgroundColor: Colors.dark.primary, shadowColor: Colors.dark.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+    addRecordBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' },
     emptyText: { textAlign: 'center', padding: 24, fontSize: 13, fontStyle: 'italic', fontWeight: '500' },
     tableContainer: { marginBottom: 16, borderRadius: 16, overflow: 'hidden', borderWidth: 1 },
     tableHeader: { flexDirection: 'row', padding: 12 },

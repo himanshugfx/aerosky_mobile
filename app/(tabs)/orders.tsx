@@ -90,7 +90,18 @@ const OrderCard = ({
                     <Text style={[styles.label, { color: theme.textSecondary }]}>Date</Text>
                     <Text style={[styles.value, { color: theme.text }]}>{new Date(order.orderDate).toLocaleDateString()}</Text>
                 </View>
+                <View style={styles.detailItem}>
+                    <Text style={[styles.label, { color: theme.textSecondary }]}>Qty</Text>
+                    <Text style={[styles.value, { color: theme.text }]}>{order.quantity || 1}</Text>
+                </View>
             </View>
+
+            {order.manufacturingNotes ? (
+                <View style={{ marginTop: Spacing.md, padding: Spacing.sm, backgroundColor: theme.border + '20', borderRadius: BorderRadius.md }}>
+                    <Text style={[styles.label, { color: theme.textSecondary, marginBottom: 2 }]}>Manufacturing Notes</Text>
+                    <Text style={{ color: theme.text, fontSize: 13, fontStyle: 'italic' }}>{order.manufacturingNotes}</Text>
+                </View>
+            ) : null}
 
             <View style={[styles.cardFooter, { borderTopColor: theme.border + '30' }]}>
                 <View style={[styles.statusBadge, { backgroundColor: stageColor + '15' }]}>
@@ -99,6 +110,11 @@ const OrderCard = ({
                         {order.manufacturingStage}
                     </Text>
                 </View>
+                {order.priorityLevel && order.priorityLevel !== 'Normal' ? (
+                    <View style={[styles.statusBadge, { backgroundColor: theme.warning + '15', marginLeft: 8 }]}>
+                        <Text style={[styles.statusText, { color: theme.warning }]}>{order.priorityLevel}</Text>
+                    </View>
+                ) : null}
                 <View style={styles.docCount}>
                     <FontAwesome name="paperclip" size={12} color={theme.textSecondary} />
                     <Text style={[styles.docText, { color: theme.textSecondary }]}>{order.uploads?.length || 0} Docs</Text>

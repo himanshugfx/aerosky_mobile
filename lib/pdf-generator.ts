@@ -1,6 +1,6 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { Order } from './types';
 
@@ -93,7 +93,23 @@ export const generateOrderPDF = async (order: Order) => {
                 <tr><th>Contract Number</th><td>${order.contractNumber}</td></tr>
                 <tr><th>Client Name</th><td>${order.clientName}</td></tr>
                 <tr><th>Client Segment</th><td>${order.clientSegment}</td></tr>
+                <tr><th>POC</th><td>${order.contactPerson || 'N/A'} (${order.contactPhone || 'N/A'})</td></tr>
+                <tr><th>Email</th><td>${order.contactEmail || 'N/A'}</td></tr>
+                <tr><th>Delivery Address</th><td>${order.deliveryAddress || 'N/A'}</td></tr>
                 <tr><th>Order Date</th><td>${new Date(order.orderDate).toLocaleDateString()}</td></tr>
+                <tr><th>Est. Completion</th><td>${order.estimatedCompletionDate ? new Date(order.estimatedCompletionDate).toLocaleDateString() : 'N/A'}</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Financial Details</div>
+            <table>
+                <tr><th>Quantity</th><td>${order.quantity || 1}</td></tr>
+                <tr><th>Unit Price</th><td>${order.currency} ${order.unitPrice?.toLocaleString() || '0'}</td></tr>
+                <tr><th>Contract Value</th><td>${order.currency} ${order.contractValue.toLocaleString()}</td></tr>
+                <tr><th>Payment Terms</th><td>${order.paymentTerms || 'N/A'}</td></tr>
+                <tr><th>Payment Status</th><td>${order.paymentStatus || 'Unpaid'}</td></tr>
+                <tr><th>Revenue Status</th><td>${order.revenueRecognitionStatus}</td></tr>
             </table>
         </div>
 
@@ -103,18 +119,55 @@ export const generateOrderPDF = async (order: Order) => {
                 <tr><th>Drone Model</th><td>${order.droneModel}</td></tr>
                 <tr><th>Drone Type</th><td>${order.droneType}</td></tr>
                 <tr><th>Weight Class</th><td>${order.weightClass}</td></tr>
-                <tr><th>Contract Value</th><td>INR ${order.contractValue.toLocaleString()}</td></tr>
+                <tr><th>Payload</th><td>${order.payloadConfiguration || 'N/A'}</td></tr>
+                <tr><th>Endurance</th><td>${order.flightEnduranceRequirements || 'N/A'}</td></tr>
+                <tr><th>Software Tier</th><td>${order.softwareAiTier || 'N/A'}</td></tr>
             </table>
         </div>
 
         <div class="section">
-            <div class="section-title">Status & Compliance</div>
+            <div class="section-title">Compliance & Regulatory</div>
             <table>
-                <tr><th>Manufacturing Stage</th><td><span class="badge badge-blue">${order.manufacturingStage}</span></td></tr>
-                <tr><th>BOM Readiness</th><td>${order.bomReadiness}</td></tr>
+                <tr><th>UIN</th><td>${order.uin || 'N/A'}</td></tr>
                 <tr><th>Certification Status</th><td>${order.dgcaFaaCertificationStatus}</td></tr>
+                <tr><th>Export License</th><td>${order.exportLicenseStatus || 'N/A'}</td></tr>
+                <tr><th>Geofencing</th><td>${order.geofencingRequirements || 'N/A'}</td></tr>
             </table>
         </div>
+
+        <div class="section">
+            <div class="section-title">Operational Status</div>
+            <table>
+                <tr><th>Priority Level</th><td><span class="badge badge-blue">${order.priorityLevel || 'Normal'}</span></td></tr>
+                <tr><th>Manufacturing Stage</th><td><span class="badge badge-blue">${order.manufacturingStage}</span></td></tr>
+                <tr><th>BOM Readiness</th><td>${order.bomReadiness}</td></tr>
+                <tr><th>Quality Check</th><td>${order.qualityCheckStatus || 'Pending'}</td></tr>
+                <tr><th>Warranty Terms</th><td>${order.warrantyTerms || 'N/A'}</td></tr>
+                <tr><th>After-Sales/AMC</th><td>${order.afterSalesAmc || 'N/A'}</td></tr>
+                <tr><th>Calibration Logs</th><td>${order.calibrationTestLogs || 'N/A'}</td></tr>
+            </table>
+        </div>
+
+        ${order.manufacturingNotes ? `
+        <div class="section">
+            <div class="section-title">Critical Manufacturing Notes</div>
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${order.manufacturingNotes}</div>
+        </div>
+        ` : ''}
+
+        ${order.specialRequirements ? `
+        <div class="section">
+            <div class="section-title">Special Requirements</div>
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${order.specialRequirements}</div>
+        </div>
+        ` : ''}
+
+        ${order.internalOrderNotes ? `
+        <div class="section">
+            <div class="section-title">Internal Team Notes</div>
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #eab308; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${order.internalOrderNotes}</div>
+        </div>
+        ` : ''}
 
         ${order.uploads && order.uploads.length > 0 ? `
         <div class="section" style="page-break-before: always;">
@@ -122,10 +175,10 @@ export const generateOrderPDF = async (order: Order) => {
             ${order.uploads.map((u, i) => `
                 <div class="document-item">
                     <div class="document-name">${i + 1}. ${u.fileName}</div>
-                    ${u.fileData.startsWith('data:image/') ? `
+                    ${u.fileData && u.fileData.startsWith('data:image/') ? `
                         <img src="${u.fileData}" class="document-img" />
                     ` : `
-                        <div style="color: #2563eb; font-size: 12px;">(PDF Document - Metadata only on mobile report)</div>
+                        <div style="color: #2563eb; font-size: 12px;">(Document attached - View in App)</div>
                     `}
                 </div>
             `).join('')}
