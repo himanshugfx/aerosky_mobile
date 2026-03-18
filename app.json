@@ -20,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#111827"
+        "backgroundColor": "#ffffff"
       },
       "package": "com.aerosys.aerosky",
       "edgeToEdgeEnabled": true,
