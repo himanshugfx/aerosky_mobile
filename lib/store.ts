@@ -524,7 +524,7 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
     fetchNotifications: async () => {
         try {
             const notifications = await notificationsApi.list();
-            set({ notifications });
+            set({ notifications: Array.isArray(notifications) ? notifications : [] });
         } catch (error) {
             console.error('Failed to fetch notifications:', error);
         }

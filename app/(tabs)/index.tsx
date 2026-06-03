@@ -1,8 +1,8 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View, useColorScheme } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { apiClient, notificationsApi } from '../../lib/api';
 import { useAuthStore, useComplianceStore } from '../../lib/store';
@@ -68,6 +68,57 @@ const QuickAction = ({
       </View>
       <Text style={[styles.quickActionTitle, { color: theme.text }]}>{title}</Text>
     </TouchableOpacity>
+  );
+};
+
+// Push Notification Module
+const PushNotificationModule = () => {
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? 'dark'];
+
+  const sendPush = async () => {
+    if (!title || !message) {
+      Alert.alert('Error', 'Please enter both title and message.');
+      return;
+    }
+    setSending(true);
+    try {
+      await apiClient.post('/api/mobile/push', { title, message });
+      Alert.alert('Success', 'Push notification sent to all users!');
+      setTitle('');
+      setMessage('');
+    } catch (e) {
+      Alert.alert('Error', 'Failed to send push notification');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <View style={[styles.activityCard, { backgroundColor: theme.cardBackground, borderColor: theme.border, marginTop: Spacing.xl, padding: Spacing.lg }]}>
+      <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: Spacing.md }]}>Broadcast Push Notification</Text>
+      <TextInput
+        style={[styles.pushInput, { borderColor: theme.border, color: theme.text }]}
+        placeholder="Notification Title"
+        placeholderTextColor={theme.textSecondary}
+        value={title}
+        onChangeText={setTitle}
+      />
+      <TextInput
+        style={[styles.pushInput, { borderColor: theme.border, color: theme.text, height: 80, textAlignVertical: 'top' }]}
+        placeholder="Notification Message"
+        placeholderTextColor={theme.textSecondary}
+        multiline
+        value={message}
+        onChangeText={setMessage}
+      />
+      <TouchableOpacity style={[styles.pushButton, { backgroundColor: theme.primary }]} onPress={sendPush} disabled={sending}>
+        <Text style={styles.pushButtonText}>{sending ? 'Sending Broadcast...' : 'Send to All Users'}</Text>
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -235,6 +286,9 @@ const BusinessDashboard = ({
           </View>
         </>
       )}
+
+      {/* Push Notification Broadcaster */}
+      <PushNotificationModule />
     </ScrollView>
   );
 };
@@ -321,6 +375,9 @@ const SuperAdminDashboard = ({ user, refreshing, onRefresh, router }: any) => {
           System is running within normal parameters. Multi-tenancy isolation is active.
         </Text>
       </View>
+
+      {/* Push Notification Broadcaster */}
+      <PushNotificationModule />
     </ScrollView>
   );
 };
@@ -666,5 +723,24 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  pushInput: {
+    borderWidth: 1.5,
+    borderRadius: BorderRadius.md,
+    padding: 12,
+    marginBottom: 12,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  pushButton: {
+    padding: 14,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  pushButtonText: {
+    color: '#FFF',
+    fontWeight: '800',
+    fontSize: 14,
   }
 });

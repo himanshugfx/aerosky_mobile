@@ -78,6 +78,16 @@ function RootLayoutNav() {
       setIsReady(true);
     };
     initAuth();
+
+    // Register for push notifications and get permissions
+    import('../lib/notifications').then(({ registerForPushNotificationsAsync }) => {
+      registerForPushNotificationsAsync().then(token => {
+        if (token) {
+          console.log('App ready to receive push notifications');
+          // Optional: Send this token to the backend here
+        }
+      });
+    });
   }, []);
 
   // Handle navigation based on auth state
