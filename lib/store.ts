@@ -2,9 +2,9 @@
 // These mirror the web app's state management
 
 import { create } from 'zustand';
-import { apiClient, batteriesApi, dronesApi, inventoryApi, ordersApi, subcontractorsApi, teamApi } from './api';
+import { apiClient, batteriesApi, dronesApi, expensesApi, inventoryApi, notificationsApi, ordersApi, subcontractorsApi, teamApi } from './api';
 import { auth } from './auth';
-import type { Battery, Drone, FlightLog, InventoryComponent, InventoryTransaction, ManufacturedUnit, Order, Subcontractor, TeamMember, User } from './types';
+import type { Battery, Drone, Expense, FlightLog, InventoryComponent, InventoryTransaction, ManufacturedUnit, Notification, Order, Subcontractor, TeamMember, User } from './types';
 
 // ============================================
 // AUTH STORE
@@ -62,6 +62,8 @@ interface ComplianceState {
     flightLogs: FlightLog[];
     components: InventoryComponent[];
     inventoryTransactions: InventoryTransaction[];
+    expenses: Expense[];
+    notifications: Notification[];
     loading: boolean;
     error: string | null;
 
@@ -73,6 +75,8 @@ interface ComplianceState {
     fetchOrders: () => Promise<void>;
     fetchFlightLogs: () => Promise<void>;
     fetchInventory: (search?: string) => Promise<void>;
+    fetchExpenses: () => Promise<void>;
+    fetchNotifications: () => Promise<void>;
     fetchAll: () => Promise<void>;
 
     // Drone actions
@@ -107,6 +111,11 @@ interface ComplianceState {
     addInventoryTransaction: (data: any) => Promise<void>;
     addComponentType: (data: any) => Promise<void>;
 
+    // Expense actions
+    addExpense: (data: Partial<Expense>) => Promise<void>;
+    updateExpense: (data: { id: string; [key: string]: any }) => Promise<void>;
+    deleteExpense: (id: string) => Promise<void>;
+
     // Compliance actions
     updateDroneUploads: (droneId: string, uploadType: string, files: string | string[], label?: string) => Promise<void>;
     assignAccountableManager: (droneId: string, managerId: string) => Promise<void>;
@@ -127,6 +136,8 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
     flightLogs: [],
     components: [],
     inventoryTransactions: [],
+    expenses: [],
+    notifications: [],
     loading: false,
     error: null,
 
@@ -142,6 +153,8 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
                 get().fetchOrders(),
                 get().fetchFlightLogs(),
                 get().fetchInventory(),
+                get().fetchExpenses(),
+                get().fetchNotifications(),
             ]);
         } catch (error) {
             set({ error: 'Failed to fetch data' });
@@ -495,6 +508,59 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
         if (drones.length === 0) return 0;
         const itemsWithManager = drones.filter(d => d.accountableManagerId).length;
         return Math.round((itemsWithManager / drones.length) * 100);
+    },
+
+    // Fetch expenses
+    fetchExpenses: async () => {
+        try {
+            const data = await expensesApi.list();
+            set({ expenses: data.expenses || [] });
+        } catch (error) {
+            console.error('Failed to fetch expenses:', error);
+        }
+    },
+
+    // Fetch notifications
+    fetchNotifications: async () => {
+        try {
+            const notifications = await notificationsApi.list();
+            set({ notifications });
+        } catch (error) {
+            console.error('Failed to fetch notifications:', error);
+        }
+    },
+
+    // Add expense
+    addExpense: async (data) => {
+        try {
+            await expensesApi.create(data as any);
+            await get().fetchExpenses();
+        } catch (error) {
+            console.error('Failed to add expense:', error);
+            throw error;
+        }
+    },
+
+    // Update expense
+    updateExpense: async (data) => {
+        try {
+            await expensesApi.update(data);
+            await get().fetchExpenses();
+        } catch (error) {
+            console.error('Failed to update expense:', error);
+            throw error;
+        }
+    },
+
+    // Delete expense
+    deleteExpense: async (id) => {
+        try {
+            await expensesApi.delete(id);
+            set((state) => ({ expenses: state.expenses.filter(e => e.id !== id) }));
+        } catch (error) {
+            console.error('Failed to delete expense:', error);
+            throw error;
+        }
     },
 
     clearError: () => set({ error: null }),

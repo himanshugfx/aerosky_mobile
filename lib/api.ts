@@ -210,9 +210,8 @@ export const flightsApi = {
         await apiClient.delete(`/api/mobile/flights/${id}`);
     },
 
-    // Legacy/Mock methods for plans
     listPlans: async (): Promise<FlightPlan[]> => {
-        const response = await apiClient.get('/api/flights');
+        const response = await apiClient.get('/api/mobile/flights');
         return response.data;
     },
 };
@@ -264,4 +263,48 @@ export const reimbursementsApi = {
     },
 };
 
+// ============================================
+// EXPENSES API
+// ============================================
+export const expensesApi = {
+    list: async (params?: { page?: number; limit?: number; category?: string; status?: string }) => {
+        const response = await apiClient.get('/api/mobile/expenses', { params });
+        return response.data;
+    },
+
+    create: async (data: {
+        description: string;
+        amount: number;
+        date: string;
+        category: string;
+        paymentMethod?: string;
+        paymentStatus?: string;
+        attachment?: string;
+    }) => {
+        const response = await apiClient.post('/api/mobile/expenses', data);
+        return response.data;
+    },
+
+    update: async (data: { id: string; [key: string]: any }) => {
+        const response = await apiClient.put('/api/mobile/expenses', data);
+        return response.data;
+    },
+
+    delete: async (id: string) => {
+        const response = await apiClient.delete(`/api/mobile/expenses?id=${id}`);
+        return response.data;
+    },
+};
+
+// ============================================
+// NOTIFICATIONS API
+// ============================================
+export const notificationsApi = {
+    list: async () => {
+        const response = await apiClient.get('/api/mobile/notifications');
+        return response.data;
+    },
+};
+
 console.log('Mobile API initialized with base URL:', API_BASE_URL);
+

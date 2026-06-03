@@ -78,7 +78,8 @@ export default function DroneDetailScreen() {
         assignAccountableManager,
         updateWebPortal,
         updateManufacturedUnits,
-        updateRecurringData
+        updateRecurringData,
+        updateDroneUploads
     } = useComplianceStore();
 
     // Derive drone data directly from store

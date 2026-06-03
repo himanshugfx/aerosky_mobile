@@ -26,6 +26,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     { name: 'batteries', label: 'Power Units', icon: 'bolt', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'flights', label: 'Flight Logs', icon: 'send', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER'] },
     { name: 'accounts', label: 'Accounts', icon: 'credit-card', roles: ['ALL'] },
+    { name: 'expenses', label: 'Expenses', icon: 'line-chart', roles: ['ADMIN', 'SUPER_ADMIN', 'ADMINISTRATION'] },
     { name: 'support', label: 'Assistance', icon: 'question-circle', roles: ['ALL'] },
     { name: 'profile', label: 'Profile', icon: 'user', roles: ['ALL'] },
   ];
@@ -235,6 +236,14 @@ export default function DrawerLayout() {
           title: 'Accounts & Reimbursement',
           drawerLabel: 'Accounts',
           drawerIcon: ({ color }) => <FontAwesome name="credit-card" size={20} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="expenses"
+        options={{
+          title: 'Expense Tracker',
+          drawerLabel: 'Expenses',
+          drawerIcon: ({ color }) => <FontAwesome name="line-chart" size={20} color={color} />,
         }}
       />
       <Drawer.Screen

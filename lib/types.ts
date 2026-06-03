@@ -186,3 +186,26 @@ export interface InventoryTransaction {
     subcontractor?: Subcontractor;
     user?: { fullName: string; username: string };
 }
+
+export interface Expense {
+    id: string;
+    description: string;
+    amount: number;
+    date: string;
+    category: string;
+    paymentMethod?: string;
+    paymentStatus: string;
+    status?: string;
+    attachment?: string;
+    organizationId: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface Notification {
+    id: string;
+    title: string;
+    message: string;
+    time: string;
+    type: 'success' | 'info' | 'warning' | 'error';
+}

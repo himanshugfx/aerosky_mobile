@@ -4,8 +4,9 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View, useColorScheme } from 'react-native';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
-import { apiClient } from '../../lib/api';
+import { apiClient, notificationsApi } from '../../lib/api';
 import { useAuthStore, useComplianceStore } from '../../lib/store';
+import type { Notification } from '../../lib/types';
 
 // Dashboard card component
 const DashboardCard = ({
@@ -79,7 +80,8 @@ const BusinessDashboard = ({
   batteries,
   onRefresh,
   refreshing,
-  router
+  router,
+  notifications
 }: any) => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'dark'];
@@ -194,6 +196,45 @@ const BusinessDashboard = ({
           </View>
         )}
       </View>
+
+      {/* Notifications Feed */}
+      {notifications && notifications.length > 0 && (
+        <>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Notifications</Text>
+          </View>
+          <View style={[styles.activityCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+            {notifications.slice(0, 5).map((notif: Notification, index: number) => {
+              const notifColor = notif.type === 'success' ? theme.success
+                : notif.type === 'info' ? '#3b82f6'
+                : notif.type === 'warning' ? theme.warning
+                : theme.error;
+              return (
+                <View
+                  key={notif.id}
+                  style={[
+                    styles.activityItem,
+                    index < Math.min(notifications.length, 5) - 1 && [styles.activityItemBorder, { borderBottomColor: theme.border }]
+                  ]}
+                >
+                  <View style={[styles.activityIconBox, { backgroundColor: notifColor + '15' }]}>
+                    <FontAwesome
+                      name={notif.type === 'success' ? 'check-circle' : notif.type === 'info' ? 'info-circle' : notif.type === 'warning' ? 'exclamation-triangle' : 'times-circle' as any}
+                      size={14}
+                      color={notifColor}
+                    />
+                  </View>
+                  <View style={styles.activityContent}>
+                    <Text style={[styles.activityTitle, { color: theme.text }]}>{notif.title}</Text>
+                    <Text style={[styles.activityTime, { color: theme.textSecondary }]} numberOfLines={1}>{notif.message}</Text>
+                  </View>
+                  <Text style={[{ fontSize: 10, fontWeight: '600', color: theme.textSecondary }]}>{notif.time}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </>
+      )}
     </ScrollView>
   );
 };
@@ -292,6 +333,7 @@ export default function DashboardScreen() {
     teamMembers,
     orders,
     batteries,
+    notifications,
     loading,
     fetchAll,
     calculateCompliance
@@ -338,6 +380,7 @@ export default function DashboardScreen() {
           teamMembers={teamMembers}
           orders={orders}
           batteries={batteries}
+          notifications={notifications}
           onRefresh={onRefresh}
           refreshing={refreshing}
           router={router}
