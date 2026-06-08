@@ -15,6 +15,7 @@ import AddDroneModal from '../../components/AddDroneModal';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
 import type { Drone } from '../../lib/types';
+import ProtectedRoute from '../../components/ProtectedRoute';
 
 const DroneCard = ({
     drone,
@@ -76,7 +77,7 @@ const DroneCard = ({
     );
 };
 
-export default function DronesScreen() {
+function DronesScreenContent() {
     const { drones, loading, fetchDrones, addDrone, deleteDrone } = useComplianceStore();
     const [refreshing, setRefreshing] = useState(false);
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
@@ -247,3 +248,11 @@ const styles = StyleSheet.create({
         shadowRadius: 3.84,
     },
 });
+
+export default function DronesScreen() {
+    return (
+        <ProtectedRoute allowedRoles={['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER']}>
+            <DronesScreenContent />
+        </ProtectedRoute>
+    );
+}

@@ -15,6 +15,7 @@ import AddStaffModal from '../../components/AddStaffModal';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
 import type { TeamMember } from '../../lib/types';
+import ProtectedRoute from '../../components/ProtectedRoute';
 
 const TeamMemberCard = ({
     member,
@@ -70,7 +71,7 @@ const TeamMemberCard = ({
     </View>
 );
 
-export default function StaffScreen() {
+function StaffScreenContent() {
     const { teamMembers, loading, fetchTeamMembers, addTeamMember, updateTeamMember, deleteTeamMember } = useComplianceStore();
     const [refreshing, setRefreshing] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -259,3 +260,11 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
     },
 });
+
+export default function StaffScreen() {
+    return (
+        <ProtectedRoute allowedRoles={['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER']}>
+            <StaffScreenContent />
+        </ProtectedRoute>
+    );
+}

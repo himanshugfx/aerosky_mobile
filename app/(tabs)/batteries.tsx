@@ -15,6 +15,7 @@ import AddBatteryModal from '../../components/AddBatteryModal';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
 import type { Battery } from '../../lib/types';
+import ProtectedRoute from '../../components/ProtectedRoute';
 
 const BatteryCard = ({
     battery,
@@ -66,7 +67,7 @@ const BatteryCard = ({
     </View>
 );
 
-export default function BatteriesScreen() {
+function BatteriesScreenContent() {
     const { batteries, loading, fetchBatteries, addBattery, deleteBattery } = useComplianceStore();
     const [refreshing, setRefreshing] = useState(false);
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
@@ -254,3 +255,11 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
     },
 });
+
+export default function BatteriesScreen() {
+    return (
+        <ProtectedRoute allowedRoles={['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER']}>
+            <BatteriesScreenContent />
+        </ProtectedRoute>
+    );
+}

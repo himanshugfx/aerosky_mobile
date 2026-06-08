@@ -31,10 +31,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     { name: 'profile', label: 'Profile', icon: 'user', roles: ['ALL'] },
   ];
 
-  // Filter menu items based on role
-  const filteredMenuItems = menuItems.filter(item =>
-    item.roles.includes('ALL') || (user?.role && item.roles.includes(user.role))
-  );
+  // No longer filtering - show all items to everyone
+  const filteredMenuItems = menuItems;
 
   const handleLogout = async () => {
     await logout();

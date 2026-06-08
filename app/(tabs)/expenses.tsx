@@ -19,12 +19,13 @@ import {
 import Colors, { BorderRadius, Spacing } from '../../constants/Colors';
 import { useAuthStore, useComplianceStore } from '../../lib/store';
 import type { Expense } from '../../lib/types';
+import ProtectedRoute from '../../components/ProtectedRoute';
 
 const categories = ['Travel', 'Maintenance', 'Operational', 'Marketing', 'Office', 'Other'];
 const paymentMethods = ['Cash', 'UPI', 'Bank Transfer', 'Credit Card', 'Other'];
 const paymentStatuses = ['unpaid', 'paid', 'partial'];
 
-export default function ExpensesScreen() {
+function ExpensesScreenContent() {
     const colorScheme = useColorScheme();
     const theme = Colors[colorScheme ?? 'dark'];
     const { user } = useAuthStore();
@@ -489,3 +490,11 @@ const styles = StyleSheet.create({
     disabledBtn: { opacity: 0.5 },
     submitBtnText: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 1 },
 });
+
+export default function ExpensesScreen() {
+    return (
+        <ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN', 'ADMINISTRATION']}>
+            <ExpensesScreenContent />
+        </ProtectedRoute>
+    );
+}

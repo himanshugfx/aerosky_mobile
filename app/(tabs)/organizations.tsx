@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, FlatList, Modal, RefreshControl, StyleSheet, 
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { apiClient } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
+import ProtectedRoute from '../../components/ProtectedRoute';
 
 interface Organization {
     id: string;
@@ -13,7 +14,7 @@ interface Organization {
     createdAt: string;
 }
 
-export default function OrganizationsScreen() {
+function OrganizationsScreenContent() {
     const { user } = useAuthStore();
     const [organizations, setOrganizations] = useState<Organization[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -956,3 +957,11 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
     },
 });
+
+export default function OrganizationsScreen() {
+    return (
+        <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+            <OrganizationsScreenContent />
+        </ProtectedRoute>
+    );
+}
