@@ -15,7 +15,6 @@ import AddFlightLogModal from '../../components/AddFlightLogModal';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
 import type { FlightLog } from '../../lib/types';
-import ProtectedRoute from '../../components/ProtectedRoute';
 
 const FlightLogCard = ({
     log,
@@ -77,7 +76,7 @@ const FlightLogCard = ({
     );
 };
 
-function FlightsScreenContent() {
+export default function FlightsScreen() {
     const { flightLogs, loading, fetchFlightLogs, addFlightLog, deleteFlightLog, fetchDrones, fetchTeamMembers, fetchBatteries } = useComplianceStore();
     const [refreshing, setRefreshing] = useState(false);
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
@@ -254,11 +253,3 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
     },
 });
-
-export default function FlightsScreen() {
-    return (
-        <ProtectedRoute allowedRoles={['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER']}>
-            <FlightsScreenContent />
-        </ProtectedRoute>
-    );
-}

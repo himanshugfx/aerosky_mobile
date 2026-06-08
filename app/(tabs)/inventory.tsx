@@ -19,7 +19,6 @@ import {
 } from 'react-native';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
-import ProtectedRoute from '../../components/ProtectedRoute';
 
 interface SelectorProps {
     label: string;
@@ -48,7 +47,7 @@ const Selector = ({ label, value, placeholder, onPress, icon, theme }: SelectorP
     </View>
 );
 
-function InventoryScreenContent() {
+export default function InventoryScreen() {
     const {
         components,
         inventoryTransactions,
@@ -613,11 +612,3 @@ const styles = StyleSheet.create({
     pickerLabel: { fontSize: 16, fontWeight: '700' },
     pickerSublabel: { fontSize: 12, marginTop: 2, fontWeight: '500' },
 });
-
-export default function InventoryScreen() {
-    return (
-        <ProtectedRoute allowedRoles={['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER']}>
-            <InventoryScreenContent />
-        </ProtectedRoute>
-    );
-}

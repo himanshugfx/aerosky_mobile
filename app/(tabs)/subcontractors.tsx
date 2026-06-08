@@ -14,7 +14,6 @@ import AddSubcontractorModal from '../../components/AddSubcontractorModal';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
 import type { Subcontractor } from '../../lib/types';
-import ProtectedRoute from '../../components/ProtectedRoute';
 
 const SubcontractorCard = ({
     sub,
@@ -71,7 +70,7 @@ const SubcontractorCard = ({
     </View>
 );
 
-function SubcontractorsScreenContent() {
+export default function SubcontractorsScreen() {
     const { subcontractors, loading, fetchSubcontractors, addSubcontractor, updateSubcontractor, deleteSubcontractor } = useComplianceStore();
     const [refreshing, setRefreshing] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -230,11 +229,3 @@ const styles = StyleSheet.create({
         shadowRadius: 3.84,
     },
 });
-
-export default function SubcontractorsScreen() {
-    return (
-        <ProtectedRoute allowedRoles={['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER']}>
-            <SubcontractorsScreenContent />
-        </ProtectedRoute>
-    );
-}

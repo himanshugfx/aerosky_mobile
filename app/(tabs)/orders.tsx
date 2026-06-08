@@ -17,7 +17,6 @@ import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors
 import { useComplianceStore } from '../../lib/store';
 import type { Order } from '../../lib/types';
 import { generateOrderPDF } from '../../lib/pdf-generator';
-import ProtectedRoute from '../../components/ProtectedRoute';
 
 const OrderCard = ({
     order,
@@ -125,7 +124,7 @@ const OrderCard = ({
     );
 };
 
-function OrdersScreenContent() {
+export default function OrdersScreen() {
     const { orders, loading, fetchOrders, addOrder, updateOrder, deleteOrder } = useComplianceStore();
     const [refreshing, setRefreshing] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -328,11 +327,3 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
     },
 });
-
-export default function OrdersScreen() {
-    return (
-        <ProtectedRoute allowedRoles={['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER']}>
-            <OrdersScreenContent />
-        </ProtectedRoute>
-    );
-}

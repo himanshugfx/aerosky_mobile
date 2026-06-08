@@ -24,8 +24,9 @@ import * as ImagePicker from 'expo-image-picker';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { reimbursementsApi } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
+import ProtectedRoute from '../../components/ProtectedRoute';
 
-export default function AccountsScreen() {
+function AccountsScreenContent() {
     const router = useRouter();
     const { user } = useAuthStore();
     const colorScheme = useColorScheme();
@@ -546,3 +547,11 @@ const styles = StyleSheet.create({
     catOption: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5 },
     catOptionText: { fontSize: 12, fontWeight: '700' },
 });
+
+export default function AccountsScreen() {
+    return (
+        <ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN', 'ADMINISTRATION']}>
+            <AccountsScreenContent />
+        </ProtectedRoute>
+    );
+}
