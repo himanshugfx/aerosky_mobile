@@ -167,7 +167,7 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
     fetchDrones: async () => {
         try {
             const drones = await dronesApi.list();
-            set({ drones });
+            set({ drones: Array.isArray(drones) ? drones : [] });
         } catch (error) {
             console.error('Failed to fetch drones:', error);
         }
@@ -177,7 +177,7 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
     fetchTeamMembers: async () => {
         try {
             const teamMembers = await teamApi.list();
-            set({ teamMembers });
+            set({ teamMembers: Array.isArray(teamMembers) ? teamMembers : [] });
         } catch (error) {
             console.error('Failed to fetch team members:', error);
         }
@@ -187,7 +187,7 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
     fetchSubcontractors: async () => {
         try {
             const subcontractors = await subcontractorsApi.list();
-            set({ subcontractors });
+            set({ subcontractors: Array.isArray(subcontractors) ? subcontractors : [] });
         } catch (error) {
             console.error('Failed to fetch subcontractors:', error);
         }
@@ -197,7 +197,7 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
     fetchBatteries: async () => {
         try {
             const batteries = await batteriesApi.list();
-            set({ batteries });
+            set({ batteries: Array.isArray(batteries) ? batteries : [] });
         } catch (error) {
             console.error('Failed to fetch batteries:', error);
         }
@@ -207,7 +207,7 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
     fetchOrders: async () => {
         try {
             const orders = await ordersApi.list();
-            set({ orders });
+            set({ orders: Array.isArray(orders) ? orders : [] });
         } catch (error) {
             console.error('Failed to fetch orders:', error);
         }
@@ -218,7 +218,7 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
         try {
             const { flightsApi } = await import('./api');
             const flightLogs = await flightsApi.list();
-            set({ flightLogs });
+            set({ flightLogs: Array.isArray(flightLogs) ? flightLogs : [] });
         } catch (error) {
             console.error('Failed to fetch flight logs:', error);
         }
@@ -231,7 +231,7 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
                 inventoryApi.listComponents(),
                 inventoryApi.listTransactions(search)
             ]);
-            set({ components, inventoryTransactions });
+            set({ components: Array.isArray(components) ? components : [], inventoryTransactions: Array.isArray(inventoryTransactions) ? inventoryTransactions : [] });
         } catch (error) {
             console.error('Failed to fetch inventory:', error);
         }

@@ -412,7 +412,7 @@ export default function DashboardScreen() {
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
-  if (loading && drones.length === 0) {
+  if (loading && (!Array.isArray(drones) || drones.length === 0)) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={theme.primary} />
@@ -433,11 +433,11 @@ export default function DashboardScreen() {
       ) : (
         <BusinessDashboard
           user={user}
-          drones={drones}
-          teamMembers={teamMembers}
-          orders={orders}
-          batteries={batteries}
-          notifications={notifications}
+          drones={Array.isArray(drones) ? drones : []}
+          teamMembers={Array.isArray(teamMembers) ? teamMembers : []}
+          orders={Array.isArray(orders) ? orders : []}
+          batteries={Array.isArray(batteries) ? batteries : []}
+          notifications={Array.isArray(notifications) ? notifications : []}
           onRefresh={onRefresh}
           refreshing={refreshing}
           router={router}
