@@ -54,7 +54,7 @@ export default function AddDroneModal({ visible, onClose, onSubmit, initialData 
         <Modal visible={visible} animationType="slide" transparent>
             <View style={styles.modalOverlay}>
                 <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     style={styles.keyboardView}
                 >
                     <View style={[styles.modalContent, { backgroundColor: theme.background, borderColor: theme.border }]}>

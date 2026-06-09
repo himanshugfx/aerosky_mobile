@@ -2,7 +2,20 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { apiClient, notificationsApi } from '../../lib/api';
 import { useAuthStore, useComplianceStore } from '../../lib/store';
@@ -421,29 +434,34 @@ export default function DashboardScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      {isSuperAdmin ? (
-        <SuperAdminDashboard
-          user={user}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          router={router}
-        />
-      ) : (
-        <BusinessDashboard
-          user={user}
-          drones={Array.isArray(drones) ? drones : []}
-          teamMembers={Array.isArray(teamMembers) ? teamMembers : []}
-          orders={Array.isArray(orders) ? orders : []}
-          batteries={Array.isArray(batteries) ? batteries : []}
-          notifications={Array.isArray(notifications) ? notifications : []}
-          onRefresh={onRefresh}
-          refreshing={refreshing}
-          router={router}
-        />
-      )}
-    </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        {isSuperAdmin ? (
+          <SuperAdminDashboard
+            user={user}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            router={router}
+          />
+        ) : (
+          <BusinessDashboard
+            user={user}
+            drones={Array.isArray(drones) ? drones : []}
+            teamMembers={Array.isArray(teamMembers) ? teamMembers : []}
+            orders={Array.isArray(orders) ? orders : []}
+            batteries={Array.isArray(batteries) ? batteries : []}
+            notifications={Array.isArray(notifications) ? notifications : []}
+            onRefresh={onRefresh}
+            refreshing={refreshing}
+            router={router}
+          />
+        )}
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 

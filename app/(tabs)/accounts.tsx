@@ -340,7 +340,7 @@ function AccountsScreenContent() {
             <Modal visible={showForm} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
                     <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={styles.keyboardView}
                     >
                         <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>

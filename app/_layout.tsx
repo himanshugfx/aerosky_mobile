@@ -70,6 +70,7 @@ function RootLayoutNav() {
 
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
   const [isReady, setIsReady] = useState(false);
+  const [pushToken, setPushToken] = useState<string | null>(null);
 
   // Check authentication status on mount
   useEffect(() => {
@@ -83,12 +84,23 @@ function RootLayoutNav() {
     import('../lib/notifications').then(({ registerForPushNotificationsAsync }) => {
       registerForPushNotificationsAsync().then(token => {
         if (token) {
-          console.log('App ready to receive push notifications');
-          // Optional: Send this token to the backend here
+          console.log('App ready to receive push notifications:', token);
+          setPushToken(token);
         }
       });
     });
   }, []);
+
+  // Register push token with backend when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && pushToken) {
+      import('../lib/api').then(({ apiClient }) => {
+        apiClient.post('/api/mobile/auth/push-token', { token: pushToken })
+          .then(() => console.log('Push token successfully registered with backend'))
+          .catch(err => console.error('Failed to register push token with backend:', err));
+      });
+    }
+  }, [isAuthenticated, pushToken]);
 
   // Handle navigation based on auth state
   useEffect(() => {

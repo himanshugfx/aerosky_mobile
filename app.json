@@ -24,7 +24,8 @@
       },
       "package": "com.aerosys.aerosky",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "adjustResize"
     },
     "web": {
       "bundler": "metro",

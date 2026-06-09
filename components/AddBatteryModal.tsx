@@ -53,7 +53,7 @@ export default function AddBatteryModal({ visible, onClose, onSubmit, initialDat
     return (
         <Modal visible={visible} animationType="slide" transparent>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={styles.modalOverlay}
             >
                 <View style={styles.modalContent}>

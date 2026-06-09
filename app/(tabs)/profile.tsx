@@ -403,7 +403,7 @@ export default function ProfileScreen() {
             {/* Modals Overhaul */}
             <Modal visible={editProfileVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
-                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardView}>
                         <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
                             <View style={styles.modalHeader}>
                                 <Text style={[styles.modalTitle, { color: theme.text }]}>Profile Settings</Text>
@@ -451,7 +451,7 @@ export default function ProfileScreen() {
 
             <Modal visible={changePasswordVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
-                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardView}>
                         <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
                             <View style={styles.modalHeader}>
                                 <Text style={[styles.modalTitle, { color: theme.text }]}>Security Vault</Text>
@@ -550,7 +550,7 @@ export default function ProfileScreen() {
 
             <Modal visible={helpCenterVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
-                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardView}>
                         <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
                             <View style={styles.modalHeader}>
                                 <Text style={[styles.modalTitle, { color: theme.text }]}>Liaison Hub</Text>
