@@ -331,7 +331,8 @@ export default function InventoryScreen() {
             <Modal visible={inModalVisible} animationType="slide" transparent>
                 <View style={styles.modalOverlay}>
                     <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        behavior="padding"
+                        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -200}
                         style={styles.keyboardView}
                     >
                         <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
@@ -396,7 +397,8 @@ export default function InventoryScreen() {
             <Modal visible={outModalVisible} animationType="slide" transparent>
                 <View style={styles.modalOverlay}>
                     <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        behavior="padding"
+                        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -200}
                         style={styles.keyboardView}
                     >
                         <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
@@ -458,7 +460,7 @@ export default function InventoryScreen() {
             {/* Register Asset Modal */}
             <Modal visible={addModalVisible} animationType="slide" transparent>
                 <View style={styles.modalOverlay}>
-                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardView}>
+                    <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -200} style={styles.keyboardView}>
                         <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
                             <View style={styles.modalHeader}>
                                 <Text style={[styles.modalTitle, { color: theme.text }]}>Register Asset</Text>

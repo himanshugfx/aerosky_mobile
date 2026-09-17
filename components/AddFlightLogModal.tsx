@@ -3,7 +3,9 @@ import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    KeyboardAvoidingView,
     Modal,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -157,6 +159,11 @@ export default function AddFlightLogModal({ visible, onClose, onSubmit }: AddFli
     return (
         <Modal visible={visible} animationType="slide" transparent>
             <View style={styles.modalOverlay}>
+              <KeyboardAvoidingView
+                behavior="padding"
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -200}
+                style={{ flex: 1, justifyContent: 'flex-end' }}
+              >
                 <View style={styles.modalContent}>
                     <View style={styles.header}>
                         <View>
@@ -386,6 +393,7 @@ export default function AddFlightLogModal({ visible, onClose, onSubmit }: AddFli
                         </TouchableOpacity>
                     </View>
                 </View>
+              </KeyboardAvoidingView>
             </View>
         </Modal>
     );

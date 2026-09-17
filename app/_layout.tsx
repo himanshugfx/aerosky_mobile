@@ -79,16 +79,52 @@ function RootLayoutNav() {
       setIsReady(true);
     };
     initAuth();
+  }, []);
 
-    // Register for push notifications and get permissions
-    import('../lib/notifications').then(({ registerForPushNotificationsAsync }) => {
-      registerForPushNotificationsAsync().then(token => {
+  // Register for push notifications and set up listeners
+  useEffect(() => {
+    let cleanupListeners: (() => void) | undefined;
+
+    const initNotifications = async () => {
+      try {
+        const { registerForPushNotificationsAsync, setupNotificationListeners, getLastNotificationResponse } = await import('../lib/notifications');
+
+        // Register and get push token
+        const token = await registerForPushNotificationsAsync();
         if (token) {
-          console.log('App ready to receive push notifications:', token);
+          console.log('Push token acquired:', token);
           setPushToken(token);
         }
-      });
-    });
+
+        // Set up foreground/tap listeners
+        cleanupListeners = setupNotificationListeners(
+          // onReceived (foreground notification)
+          (notification) => {
+            const { title, body } = notification.request.content;
+            console.log('[Foreground Notification]', title, body);
+          },
+          // onTapped (user tapped notification)
+          (response) => {
+            const data = response.notification.request.content.data;
+            console.log('[Notification Tapped] Data:', data);
+          },
+        );
+
+        // Check if app was launched by a notification (cold start)
+        const lastResponse = await getLastNotificationResponse();
+        if (lastResponse) {
+          console.log('[Cold Start Notification]', lastResponse.notification.request.content);
+        }
+      } catch (err) {
+        console.error('Failed to initialize notifications:', err);
+      }
+    };
+
+    initNotifications();
+
+    return () => {
+      cleanupListeners?.();
+    };
   }, []);
 
   // Register push token with backend when user is authenticated
@@ -96,8 +132,8 @@ function RootLayoutNav() {
     if (isAuthenticated && pushToken) {
       import('../lib/api').then(({ apiClient }) => {
         apiClient.post('/api/mobile/auth/push-token', { token: pushToken })
-          .then(() => console.log('Push token successfully registered with backend'))
-          .catch(err => console.error('Failed to register push token with backend:', err));
+          .then(() => console.log('Push token registered with backend'))
+          .catch(err => console.error('Failed to register push token:', err));
       });
     }
   }, [isAuthenticated, pushToken]);

@@ -269,7 +269,8 @@ export default function ExpensesScreen() {
             <Modal visible={showForm} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
                     <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        behavior="padding"
+                        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -200}
                         style={styles.keyboardView}
                     >
                         <View style={[styles.modalContent, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>

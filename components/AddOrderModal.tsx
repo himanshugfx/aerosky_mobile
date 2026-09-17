@@ -233,7 +233,8 @@ export default function AddOrderModal({ visible, onClose, onSubmit, initialData 
     return (
         <Modal visible={visible} animationType="slide" transparent>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior="padding"
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -200}
                 style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.7)' }]}
             >
                 <View style={[styles.modalContent, { backgroundColor: theme.background }]}>

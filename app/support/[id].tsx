@@ -189,7 +189,7 @@ export default function SupportChatScreen() {
             />
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior="padding"
                 keyboardVerticalOffset={90}
             >
                 {/* Ticket Header */}
