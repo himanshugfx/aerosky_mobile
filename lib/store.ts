@@ -145,7 +145,7 @@ export const useComplianceStore = create<ComplianceState>((set, get) => ({
     fetchAll: async () => {
         set({ loading: true, error: null });
         try {
-            await Promise.all([
+            await Promise.allSettled([
                 get().fetchDrones(),
                 get().fetchTeamMembers(),
                 get().fetchSubcontractors(),
