@@ -294,11 +294,9 @@ export default function ProfileScreen() {
                         <View style={[styles.roleBadge, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '30' }]}>
                             <Text style={[styles.roleBadgeText, { color: theme.primary }]}>{getRoleDisplay(user?.role || 'VIEWER')}</Text>
                         </View>
-                        {user?.organizationName && (
-                            <View style={[styles.roleBadge, { backgroundColor: theme.success + '15', borderColor: theme.success + '30' }]}>
-                                <Text style={[styles.roleBadgeText, { color: theme.success }]}>{user.organizationName}</Text>
-                            </View>
-                        )}
+                        <View style={[styles.roleBadge, { backgroundColor: theme.success + '15', borderColor: theme.success + '30' }]}>
+                            <Text style={[styles.roleBadgeText, { color: theme.success }]}>AeroSys Aviation</Text>
+                        </View>
                     </View>
                 </View>
 
@@ -345,21 +343,6 @@ export default function ProfileScreen() {
                         />
                     </View>
                 </View>
-
-                {user?.role === 'SUPER_ADMIN' && (
-                    <View style={styles.section}>
-                        <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Systems Overseer</Text>
-                        <View style={[styles.menuGroup, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-                            <MenuItem
-                                theme={theme}
-                                icon="th-large"
-                                title="Organization Nexus"
-                                subtitle="Centralized company administration"
-                                onPress={() => router.push('/organizations')}
-                            />
-                        </View>
-                    </View>
-                )}
 
                 <View style={styles.section}>
                     <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Platform Support</Text>

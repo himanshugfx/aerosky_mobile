@@ -8,8 +8,6 @@ export interface User {
     fullName: string;
     phone: string;
     role: string;
-    organizationId?: string;
-    organizationName?: string;
 }
 
 export interface TeamMember {
@@ -123,7 +121,6 @@ export interface Drone {
 
 export interface FlightLog {
     id: string;
-    organizationId?: string;
     date: string;
     takeoffTime: string;
     duration: string;
@@ -197,7 +194,6 @@ export interface Expense {
     paymentStatus: string;
     status?: string;
     attachment?: string;
-    organizationId: string;
     createdAt?: string;
     updatedAt?: string;
 }

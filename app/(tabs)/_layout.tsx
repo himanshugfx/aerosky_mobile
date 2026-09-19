@@ -17,7 +17,6 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   const menuItems = [
     { name: 'index', label: 'Dashboard', icon: 'home', roles: ['ALL'] },
-    { name: 'organizations', label: 'Organizations', icon: 'building', roles: ['SUPER_ADMIN'] },
     { name: 'drones', label: 'Fleet', icon: 'plane', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER', 'SOFTWARE', 'MANUFACTURING', 'DESIGN', 'SALES', 'ADMINISTRATION'] },
     { name: 'staff', label: 'Personnel', icon: 'users', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER', 'SOFTWARE', 'MANUFACTURING', 'DESIGN', 'SALES', 'ADMINISTRATION'] },
     { name: 'subcontractors', label: 'Partners', icon: 'building', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER', 'SOFTWARE', 'MANUFACTURING', 'DESIGN', 'SALES', 'ADMINISTRATION'] },
@@ -64,7 +63,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                 {user.fullName || user.username || 'User'}
               </Text>
               <Text style={[styles.userEmail, { color: 'rgba(255,255,255,0.6)' }]} numberOfLines={1}>
-                {user.role === 'SUPER_ADMIN' ? 'Platform Administrator' : (user.organizationName || 'Company Admin')}
+                {user.role === 'SUPER_ADMIN' ? 'AeroSys Administrator' : 'AeroSys Aviation'}
               </Text>
             </View>
           </View>
@@ -166,10 +165,7 @@ export default function DrawerLayout() {
       <Drawer.Screen
         name="organizations"
         options={{
-          title: 'Organization Management',
-          drawerLabel: 'Organizations',
-          drawerIcon: ({ color }) => <FontAwesome name="building" size={20} color={color} />,
-          // Hide from drawer list if not SUPER_ADMIN (already filtered in CustomDrawerContent, but good for safety)
+          drawerItemStyle: { display: 'none' },
         }}
       />
       <Drawer.Screen

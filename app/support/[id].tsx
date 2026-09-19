@@ -37,9 +37,6 @@ interface Ticket {
         fullName: string;
         email: string;
     };
-    organization?: {
-        name: string;
-    };
     messages: Message[];
 }
 
@@ -202,9 +199,6 @@ export default function SupportChatScreen() {
                                     {ticket.status.replace('_', ' ')}
                                 </Text>
                             </View>
-                            {isSuperAdmin && ticket.organization && (
-                                <Text style={styles.orgText}>{ticket.organization.name}</Text>
-                            )}
                         </View>
                     </View>
                     {isSuperAdmin && (

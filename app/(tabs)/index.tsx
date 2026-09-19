@@ -306,95 +306,6 @@ const BusinessDashboard = ({
   );
 };
 
-// Super Admin Dashboard implementation
-const SuperAdminDashboard = ({ user, refreshing, onRefresh, router }: any) => {
-  const [stats, setStats] = React.useState({ organizations: 0, logs: 0 });
-  const [loading, setLoading] = React.useState(true);
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? 'dark'];
-
-  const fetchStats = async () => {
-    try {
-      const response = await apiClient.get('/api/mobile/organizations');
-      setStats({
-        organizations: response.data.length,
-        logs: 0 // Placeholder
-      });
-    } catch (error) {
-      console.error('Failed to fetch platform stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  React.useEffect(() => {
-    fetchStats();
-  }, [refreshing]);
-
-  return (
-    <ScrollView
-      style={styles.scrollView}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
-      }
-    >
-      {/* Welcome Section */}
-      <View style={styles.welcomeSection}>
-        <View>
-          <Text style={[styles.greeting, { color: theme.textSecondary }]}>Accessing Control Center,</Text>
-          <Text style={[styles.userName, { color: theme.text }]}>{user?.fullName || 'Super Admin'}</Text>
-        </View>
-        <TouchableOpacity onPress={() => router.push('/profile')} style={[styles.avatarMini, { backgroundColor: theme.primary, borderColor: theme.border }]}>
-          <Text style={styles.avatarMiniText}>
-            {user?.fullName?.charAt(0).toUpperCase() || 'S'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={[styles.sectionTitle, { color: theme.primary }]}>Platform Overview</Text>
-
-      <View style={styles.cardsGrid}>
-        <DashboardCard
-          title="Organizations"
-          count={stats.organizations}
-          icon="building"
-          color={theme.primary}
-          onPress={() => router.push('/organizations')}
-        />
-        <DashboardCard
-          title="System Logs"
-          count={stats.logs}
-          icon="file-text-o"
-          color={theme.success}
-        />
-      </View>
-
-      <Text style={[styles.sectionTitle, { color: theme.text, marginTop: Spacing.lg }]}>Management Shortcuts</Text>
-      <View style={styles.quickActionsRow}>
-        <QuickAction title="Add Org" icon="plus" onPress={() => router.push('/organizations')} color={theme.primary} />
-        <QuickAction title="View All" icon="list" onPress={() => router.push('/organizations')} color={theme.primary} />
-        <QuickAction title="Audit Logs" icon="shield" color={theme.success} />
-        <QuickAction title="Support" icon="question-circle" onPress={() => router.push('/support')} color={theme.accent} />
-      </View>
-
-      <View style={[styles.complianceCard, { backgroundColor: theme.cardBackground, borderColor: theme.border, marginTop: Spacing.xl }]}>
-        <View style={styles.compInfo}>
-          <FontAwesome name="info-circle" size={18} color={theme.primary} />
-          <Text style={[styles.complianceTitle, { color: theme.text }]}>Platform Health</Text>
-        </View>
-        <Text style={[styles.emptyText, { color: theme.textSecondary, marginTop: 12 }]}>
-          System is running within normal parameters. Multi-tenancy isolation is active.
-        </Text>
-      </View>
-
-      {/* Push Notification Broadcaster */}
-      <PushNotificationModule />
-    </ScrollView>
-  );
-};
-
 export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -423,8 +334,6 @@ export default function DashboardScreen() {
     setRefreshing(false);
   }, []);
 
-  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
-
   if (loading && (!Array.isArray(drones) || drones.length === 0)) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
@@ -441,26 +350,17 @@ export default function DashboardScreen() {
     >
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        {isSuperAdmin ? (
-          <SuperAdminDashboard
-            user={user}
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            router={router}
-          />
-        ) : (
-          <BusinessDashboard
-            user={user}
-            drones={Array.isArray(drones) ? drones : []}
-            teamMembers={Array.isArray(teamMembers) ? teamMembers : []}
-            orders={Array.isArray(orders) ? orders : []}
-            batteries={Array.isArray(batteries) ? batteries : []}
-            notifications={Array.isArray(notifications) ? notifications : []}
-            onRefresh={onRefresh}
-            refreshing={refreshing}
-            router={router}
-          />
-        )}
+        <BusinessDashboard
+          user={user}
+          drones={Array.isArray(drones) ? drones : []}
+          teamMembers={Array.isArray(teamMembers) ? teamMembers : []}
+          orders={Array.isArray(orders) ? orders : []}
+          batteries={Array.isArray(batteries) ? batteries : []}
+          notifications={Array.isArray(notifications) ? notifications : []}
+          onRefresh={onRefresh}
+          refreshing={refreshing}
+          router={router}
+        />
       </View>
     </KeyboardAvoidingView>
   );

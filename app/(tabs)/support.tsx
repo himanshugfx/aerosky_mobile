@@ -26,9 +26,6 @@ interface SupportTicket {
     priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
     hasNewReply: boolean;
     updatedAt: string;
-    organization?: {
-        name: string;
-    };
     _count?: {
         messages: number;
     };
@@ -156,13 +153,6 @@ export default function SupportScreen() {
                     )}
                 </View>
 
-                {isSuperAdmin && item.organization && (
-                    <View style={styles.orgInfo}>
-                        <FontAwesome name="building" size={14} color={theme.textSecondary} />
-                        <Text style={[styles.orgName, { color: theme.textSecondary }]}>{item.organization.name}</Text>
-                    </View>
-                )}
-
                 <View style={[styles.cardDivider, { backgroundColor: theme.border }]} />
 
                 <View style={styles.ticketFooter}>
@@ -194,10 +184,10 @@ export default function SupportScreen() {
             <View style={styles.header}>
                 <View>
                     <Text style={[styles.title, { color: theme.text }]}>
-                        {isSuperAdmin ? 'Support Center' : 'Organization Assistance'}
+                        AeroSys Support Desk
                     </Text>
                     <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                        {isSuperAdmin ? 'Platform-wide tickets' : 'Direct access to AeroSky Super Admins'}
+                        Operations & Technical Assistance
                     </Text>
                 </View>
                 {!isSuperAdmin && (
