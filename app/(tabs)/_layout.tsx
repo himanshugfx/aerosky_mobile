@@ -20,7 +20,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     { name: 'drones', label: 'Fleet', icon: 'plane', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER', 'SOFTWARE', 'MANUFACTURING', 'DESIGN', 'SALES', 'ADMINISTRATION'] },
     { name: 'staff', label: 'Personnel', icon: 'users', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER', 'SOFTWARE', 'MANUFACTURING', 'DESIGN', 'SALES', 'ADMINISTRATION'] },
     { name: 'subcontractors', label: 'Partners', icon: 'building', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER', 'SOFTWARE', 'MANUFACTURING', 'DESIGN', 'SALES', 'ADMINISTRATION'] },
-    { name: 'inventory', label: 'Inventory', icon: 'archive', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER', 'SOFTWARE', 'MANUFACTURING', 'DESIGN', 'SALES', 'ADMINISTRATION'] },
+    { name: 'inventory', label: 'Inventory', icon: 'archive', roles: ['ALL'] },
     { name: 'orders', label: 'Orders', icon: 'list-alt', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER', 'SOFTWARE', 'MANUFACTURING', 'DESIGN', 'SALES', 'ADMINISTRATION'] },
     { name: 'batteries', label: 'Power Units', icon: 'bolt', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER', 'SOFTWARE', 'MANUFACTURING', 'DESIGN', 'SALES', 'ADMINISTRATION'] },
     { name: 'flights', label: 'Flight Logs', icon: 'send', roles: ['ADMIN', 'OPERATIONS_MANAGER', 'QA_MANAGER', 'PILOT', 'TECHNICIAN', 'VIEWER', 'SOFTWARE', 'MANUFACTURING', 'DESIGN', 'SALES', 'ADMINISTRATION'] },
