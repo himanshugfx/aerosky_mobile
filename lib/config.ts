@@ -12,8 +12,12 @@ function getApiUrl(): string {
         if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
             return 'http://localhost:3000';
         }
-        // For production web
-        return 'https://your-aerosky-app.vercel.app';
+        // When running in production browser on custom domain
+        if (typeof window !== 'undefined' && window.location.origin && window.location.hostname !== 'localhost') {
+            return window.location.origin;
+        }
+        // For production web fallback
+        return 'https://aerosysaviation.in';
     }
 
     // For native development (Android/iOS)
@@ -25,7 +29,7 @@ function getApiUrl(): string {
     }
 
     // For production native apps
-    return 'https://aerosky-backend-one.vercel.app';
+    return 'https://aerosysaviation.in';
 }
 
 export const API_BASE_URL = getApiUrl();
