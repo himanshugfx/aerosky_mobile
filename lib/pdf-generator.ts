@@ -3,6 +3,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { Order } from './types';
+import { formatDate } from './date';
 
 export const generateOrderPDF = async (order: Order) => {
     const htmlContent = `
@@ -96,8 +97,8 @@ export const generateOrderPDF = async (order: Order) => {
                 <tr><th>POC</th><td>${order.contactPerson || 'N/A'} (${order.contactPhone || 'N/A'})</td></tr>
                 <tr><th>Email</th><td>${order.contactEmail || 'N/A'}</td></tr>
                 <tr><th>Delivery Address</th><td>${order.deliveryAddress || 'N/A'}</td></tr>
-                <tr><th>Order Date</th><td>${new Date(order.orderDate).toLocaleDateString()}</td></tr>
-                <tr><th>Est. Completion</th><td>${order.estimatedCompletionDate ? new Date(order.estimatedCompletionDate).toLocaleDateString() : 'N/A'}</td></tr>
+                <tr><th>Order Date</th><td>${formatDate(order.orderDate)}</td></tr>
+                <tr><th>Est. Completion</th><td>${order.estimatedCompletionDate ? formatDate(order.estimatedCompletionDate) : 'N/A'}</td></tr>
             </table>
         </div>
 

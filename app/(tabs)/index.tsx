@@ -20,6 +20,7 @@ import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors
 import { apiClient, notificationsApi } from '../../lib/api';
 import { useAuthStore, useComplianceStore } from '../../lib/store';
 import type { Notification } from '../../lib/types';
+import { formatDate } from '../../lib/date';
 
 // Dashboard card component
 const DashboardCard = ({
@@ -248,7 +249,7 @@ const BusinessDashboard = ({
               <View style={styles.activityContent}>
                 <Text style={[styles.activityTitle, { color: theme.text }]}>{drone.modelName}</Text>
                 <Text style={[styles.activityTime, { color: theme.textSecondary }]}>
-                  Registered {new Date(drone.createdAt).toLocaleDateString()}
+                  Registered {formatDate(drone.createdAt)}
                 </Text>
               </View>
               <FontAwesome name="chevron-right" size={12} color={theme.textSecondary} />

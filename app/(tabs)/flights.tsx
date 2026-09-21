@@ -15,6 +15,7 @@ import AddFlightLogModal from '../../components/AddFlightLogModal';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
 import type { FlightLog } from '../../lib/types';
+import { formatDate } from '../../lib/date';
 
 const FlightLogCard = ({
     log,
@@ -40,7 +41,7 @@ const FlightLogCard = ({
                     </View>
                     <View style={styles.badgeContainer}>
                         <View style={[styles.dateBadge, { backgroundColor: theme.primary + '15' }]}>
-                            <Text style={[styles.dateText, { color: theme.primary }]}>{new Date(log.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}</Text>
+                            <Text style={[styles.dateText, { color: theme.primary }]}>{formatDate(log.date)}</Text>
                         </View>
                         <View style={[styles.timeBadge, { backgroundColor: theme.success + '15' }]}>
                             <Text style={[styles.timeText, { color: theme.success }]}>{log.takeoffTime}</Text>

@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
+import { formatDate } from '../../lib/date';
 
 interface SelectorProps {
     label: string;
@@ -183,7 +184,7 @@ export default function InventoryScreen() {
             </View>
             <View style={styles.transRight}>
                 <Text style={[styles.qtyText, { color: theme.text }]}>{item.quantity}</Text>
-                <Text style={[styles.dateText, { color: theme.textSecondary }]}>{new Date(item.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}</Text>
+                <Text style={[styles.dateText, { color: theme.textSecondary }]}>{formatDate(item.date)}</Text>
             </View>
         </View>
     );

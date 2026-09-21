@@ -23,6 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { reimbursementsApi } from '../../lib/api';
+import { formatDate } from '../../lib/date';
 import { useAuthStore } from '../../lib/store';
 import ProtectedRoute from '../../components/ProtectedRoute';
 
@@ -226,7 +227,7 @@ function AccountsScreenContent() {
                             </View>
                         )}
                     </View>
-                    <Text style={[styles.cardDate, { color: theme.textSecondary }]}>{new Date(item.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}</Text>
+                    <Text style={[styles.cardDate, { color: theme.textSecondary }]}>{formatDate(item.date)}</Text>
                 </View>
                 <View style={[
                     styles.statusBadge,

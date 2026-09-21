@@ -17,6 +17,7 @@ import {
 import Colors, { BorderRadius, Spacing } from '../../constants/Colors';
 import { apiClient } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
+import { formatDate as formatDDMMYYYY } from '../../lib/date';
 
 // Interfaces
 interface SupportTicket {
@@ -123,7 +124,7 @@ export default function SupportScreen() {
             const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             return time;
         }
-        return date.toLocaleDateString();
+        return formatDDMMYYYY(date);
     };
 
     const renderTicket = ({ item }: { item: SupportTicket }) => {

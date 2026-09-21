@@ -15,6 +15,7 @@ import AddDroneModal from '../../components/AddDroneModal';
 import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors';
 import { useComplianceStore } from '../../lib/store';
 import type { Drone } from '../../lib/types';
+import { formatDate } from '../../lib/date';
 
 const DroneCard = ({
     drone,
@@ -55,7 +56,7 @@ const DroneCard = ({
                 </View>
                 <View style={styles.detailItem}>
                     <Text style={styles.label}>Added On</Text>
-                    <Text style={styles.value}>{new Date(drone.createdAt).toLocaleDateString()}</Text>
+                    <Text style={styles.value}>{formatDate(drone.createdAt)}</Text>
                 </View>
                 <View style={styles.detailItem}>
                     <Text style={styles.label}>Compliance</Text>

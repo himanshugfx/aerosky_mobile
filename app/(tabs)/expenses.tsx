@@ -19,6 +19,7 @@ import {
 import Colors, { BorderRadius, Spacing } from '../../constants/Colors';
 import { useAuthStore, useComplianceStore } from '../../lib/store';
 import type { Expense } from '../../lib/types';
+import { formatDate } from '../../lib/date';
 
 const categories = ['Travel', 'Maintenance', 'Operational', 'Marketing', 'Office', 'Other'];
 const paymentMethods = ['Cash', 'UPI', 'Bank Transfer', 'Credit Card', 'Other'];
@@ -161,7 +162,7 @@ export default function ExpensesScreen() {
                             <Text style={[styles.catBadgeText, { color: getCategoryColor(item.category) }]}>{item.category.toUpperCase()}</Text>
                         </View>
                         <Text style={[styles.cardDate, { color: theme.textSecondary }]}>
-                            {new Date(item.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
+                            {formatDate(item.date)}
                         </Text>
                     </View>
                 </View>

@@ -17,6 +17,7 @@ import Colors, { BorderRadius, FontSizes, Spacing } from '../../constants/Colors
 import { useComplianceStore } from '../../lib/store';
 import type { Order } from '../../lib/types';
 import { generateOrderPDF } from '../../lib/pdf-generator';
+import { formatDate } from '../../lib/date';
 
 const OrderCard = ({
     order,
@@ -88,7 +89,7 @@ const OrderCard = ({
                 </View>
                 <View style={styles.detailItem}>
                     <Text style={[styles.label, { color: theme.textSecondary }]}>Date</Text>
-                    <Text style={[styles.value, { color: theme.text }]}>{new Date(order.orderDate).toLocaleDateString()}</Text>
+                    <Text style={[styles.value, { color: theme.text }]}>{formatDate(order.orderDate)}</Text>
                 </View>
                 <View style={styles.detailItem}>
                     <Text style={[styles.label, { color: theme.textSecondary }]}>Qty</Text>

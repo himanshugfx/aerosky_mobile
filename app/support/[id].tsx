@@ -19,6 +19,7 @@ import {
 import Colors, { BorderRadius, Spacing } from '../../constants/Colors';
 import { apiClient } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
+import { formatDate as formatDDMMYYYY } from '../../lib/date';
 
 interface Message {
     id: string;
@@ -121,7 +122,7 @@ export default function SupportChatScreen() {
         if (date.toDateString() === today.toDateString()) {
             return 'TODAY';
         }
-        return date.toLocaleDateString().toUpperCase();
+        return formatDDMMYYYY(date);
     };
 
     const renderMessage = ({ item, index }: { item: Message; index: number }) => {
